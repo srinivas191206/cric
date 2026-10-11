@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Stump & Wicket AI Detector | Real-time YOLO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="background-glow"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Cricket Stumps Icon -->
+          <rect x="7" y="10" width="3" height="18" rx="1.5" fill="#00eb78" />
+          <rect x="14.5" y="10" width="3" height="18" rx="1.5" fill="#00eb78" />
+          <rect x="22" y="10" width="3" height="18" rx="1.5" fill="#00eb78" />
+          <!-- Bails -->
+          <rect x="5" y="7.5" width="10.5" height="2" rx="1" fill="#ffd13b" />
+          <rect x="16.5" y="7.5" width="10.5" height="2" rx="1" fill="#ffd13b" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>CRICKET<span class="highlight">VISION</span> AI</h1>
+        <p class="subtitle">Real-time Stumps, Pitch Calibration & Ball Tracking</p>
+      </div>
+    </div>
+
+    <div class="header-badges">
+      <div class="badge model-badge">
+        <span class="status-dot"></span>
+        <span class="badge-label">Stumps:</span>
+        <span class="badge-val">YOLO11n · 100% Prec</span>
+      </div>
+      <div class="badge acc-badge">
+        <span class="status-dot ball-dot"></span>
+        <span class="badge-label">Ball Model:</span>
+        <span class="badge-val text-ball">YOLO11n · 95.6% mAP</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section Navigation -->
+  <nav class="section-nav-wrapper">
+    <div class="section-nav">
+      <button id="nav-btn-stumps" class="nav-section-btn active" onclick="switchSection('stumps')">
+        <span class="nav-icon">🏏</span>
+        <div class="nav-meta">
+          <span class="nav-title">Stumps & Pitch Vision</span>
+          <span class="nav-sub">White Creases & 5 Length Zones</span>
+        </div>
+      </button>
+      <button id="nav-btn-ball" class="nav-section-btn" onclick="switchSection('ball')">
+        <span class="nav-icon">⚡</span>
+        <div class="nav-meta">
+          <span class="nav-title">Ball Tracking & Trajectory</span>
+          <span class="nav-sub">Clean Delivery Trajectory</span>
+        </div>
+      </button>
+      <button id="nav-btn-combined" class="nav-section-btn" onclick="switchSection('combined')">
+        <span class="nav-icon">🎯</span>
+        <div class="nav-meta">
+          <span class="nav-title">Combined DRS Vision</span>
+          <span class="nav-sub">Full Stumps + Ball Flight Sync</span>
+        </div>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-container">
+    <!-- Control Panel -->
+    <section class="control-panel">
+      <!-- Media Type Tabs -->
+      <div class="tabs">
+        <button id="tab-image" class="tab-btn active" onclick="switchTab('image')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Cricket Image
+        </button>
+        <button id="tab-video" class="tab-btn" onclick="switchTab('video')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Cricket Video
+        </button>
+      </div>
+
+      <!-- Quick Samples Strip -->
+      <div class="samples-wrapper">
+        <div class="samples-header">
+          <span id="samples-title" class="section-title">Quick Test Scenarios</span>
+          <span class="samples-hint">Click to test instantly</span>
+        </div>
+        <div id="samples-container" class="samples-grid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Upload Drop Zone -->
+      <div id="drop-zone" class="drop-zone">
+        <input type="file" id="file-input" accept="image/*,video/*" class="file-hidden">
+        <div class="drop-content">
+          <div class="upload-icon-pulse">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <h3 id="upload-heading">Drop your cricket image here</h3>
+          <p class="upload-sub">or <button type="button" class="browse-btn" onclick="triggerFileInput()">Browse File</button></p>
+          <span id="upload-formats" class="file-spec">Supports JPG, PNG, WEBP, MP4, MOV, AVI</span>
+        </div>
+      </div>
+
+      <!-- VIDEO TIMELINE & DELIVERY TRIM STUDIO -->
+      <div id="video-trim-card" class="settings-card hidden">
+        <div class="settings-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span class="card-tag card-tag-ball">
+            ✂️ DELIVERY TIMELINE TRIMMER
+          </span>
+          <span id="trim-duration-badge" class="badge-ball-active" style="font-size: 0.74rem;">Selected: 0.0s</span>
+        </div>
+
+        <p class="setting-desc" style="margin-bottom: 12px; line-height: 1.4;">
+          Scrub the video below to select the delivery moment from bowler release to the wickets. The AI model will process only this selected window!
+        </p>
+
+        <!-- Video Scrub Player Container -->
+        <div class="trim-player-wrapper">
+          <video id="trim-preview-video" playsinline muted preload="auto"></video>
+          <div class="trim-playhead-badge" id="trim-playhead-time">00:00.0 / 00:00.0</div>
+          <button type="button" class="trim-play-toggle-btn" id="trim-play-btn" onclick="toggleTrimVideoPlay()">▶</button>
+        </div>
+
+        <!-- Timeline Range Bar -->
+        <div class="timeline-container">
+          <div class="timeline-track-bg">
+            <div id="timeline-highlight" class="timeline-highlight"></div>
+            <div id="timeline-cursor" class="timeline-cursor"></div>
+          </div>
+          <div class="dual-range-wrapper">
+            <input type="range" id="trim-range-start" class="range-handle" min="0" max="100" step="0.05" value="0">
+            <input type="range" id="trim-range-end" class="range-handle" min="0" max="100" step="0.05" value="100">
+          </div>
+        </div>
+
+        <!-- Precise Timestamp Controls -->
+        <div class="trim-inputs-grid">
+          <div class="trim-input-card">
+            <span class="trim-input-lbl">Start (Bowler Release)</span>
+            <div class="trim-field-group">
+              <input type="number" id="trim-start-num" min="0" step="0.1" value="0.0" class="trim-num-field" onchange="syncTrimFromNumberInputs()">
+              <span class="trim-unit">s</span>
+              <button type="button" class="btn-trim-cur" onclick="setTrimStartToCurrentTime()" title="Set start time to current playhead">
+                ⏱️ Set
+              </button>
+            </div>
+          </div>
+
+          <div class="trim-input-card">
+            <span class="trim-input-lbl">End (Wickets / Keeper)</span>
+            <div class="trim-field-group">
+              <input type="number" id="trim-end-num" min="0" step="0.1" value="0.0" class="trim-num-field" onchange="syncTrimFromNumberInputs()">
+              <span class="trim-unit">s</span>
+              <button type="button" class="btn-trim-cur" onclick="setTrimEndToCurrentTime()" title="Set end time to current playhead">
+                ⏱️ Set
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="trim-btn-row">
+          <button type="button" class="btn-preview-trim" onclick="playTrimPreview()">
+            ▶️ Preview Window
+          </button>
+          <button type="button" class="btn-process-trim" id="btn-process-delivery" onclick="runDetection()">
+            ⚡ Process Delivery
+          </button>
+        </div>
+      </div>
+
+      <!-- STUMPS INFERENCE SETTINGS -->
+      <div id="stumps-settings-card" class="settings-card">
+        <div class="settings-heading">
+          <span class="card-tag">STUMPS & PITCH SETTINGS</span>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="conf-slider">Wicket Confidence Threshold</label>
+            <span class="setting-desc">Minimum probability score to register a wicket</span>
+          </div>
+          <div class="slider-group">
+            <input type="range" id="conf-slider" min="0.10" max="0.95" step="0.05" value="0.35">
+            <span id="conf-value" class="slider-val">35%</span>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="calib-toggle">Pitch Axis & 22-Yard Calibration</label>
+            <span class="setting-desc">Measures 20.12m ground distance & locks perspective creases</span>
+          </div>
+          <div class="toggle-group">
+            <label class="switch">
+              <input type="checkbox" id="calib-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="render-mode-select">Visual Display Style</label>
+            <span class="setting-desc">Render 3 realistic black stumps (Off, Middle, Leg) with bails or bounding box</span>
+          </div>
+          <div class="select-group">
+            <select id="render-mode-select" class="custom-select">
+              <option value="black_stumps" selected>3 Black Stumps (DRS Style)</option>
+              <option value="bbox">Classic Bounding Box</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="pitch-zones-toggle">Bowling Length Zones (Yorker to Short)</label>
+            <span class="setting-desc">0-2m (Yorker), 2-4m (Full), 4-6m (Good Length), 6-8m (Back of Length), 8m+ (Short)</span>
+          </div>
+          <div class="toggle-group">
+            <label class="switch">
+              <input type="checkbox" id="pitch-zones-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="batting-end-select">Batting Side Reference</label>
+            <span class="setting-desc">Measure length zones from the batsman's popping crease (0m)</span>
+          </div>
+          <div class="select-group">
+            <select id="batting-end-select" class="custom-select">
+              <option value="far" selected>Far End (Bowler's / TV Broadcast View)</option>
+              <option value="near">Near End (Keeper / Batsman View)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- BALL TRACKING INFERENCE SETTINGS -->
+      <div id="ball-settings-card" class="settings-card hidden">
+        <div class="settings-heading">
+          <span class="card-tag card-tag-ball">BALL TRACKING SETTINGS</span>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="ball-conf-slider">Ball Detection Confidence</label>
+            <span class="setting-desc">Sensitivity threshold for cricket ball detection</span>
+          </div>
+          <div class="slider-group">
+            <input type="range" id="ball-conf-slider" min="0.10" max="0.90" step="0.05" value="0.25">
+            <span id="ball-conf-value" class="slider-val text-ball">25%</span>
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="trail-slider">Trajectory Trail Length</label>
+            <span class="setting-desc">Number of historical frames to retain in glowing flight arc</span>
+          </div>
+          <div class="slider-group">
+            <input type="range" id="trail-slider" min="10" max="60" step="5" value="30">
+            <span id="trail-value" class="slider-val text-ball">30 f</span>
+          </div>
+        </div>
+
+
+        <div class="setting-row" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="setting-info">
+            <label for="pitch-map-toggle">Map to 22-Yard Pitch Coordinates</label>
+            <span class="setting-desc">Calculate distance from batting crease and lateral line (Off/Middle/Leg)</span>
+          </div>
+          <div class="toggle-group">
+            <label class="switch">
+              <input type="checkbox" id="pitch-map-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Stage -->
+    <section class="results-panel">
+      <!-- Telemetry Strip -->
+      <div class="telemetry-bar">
+        <div class="tele-item">
+          <span id="tele-label-1" class="tele-label">Detections</span>
+          <span id="stat-count" class="tele-val text-green">—</span>
+        </div>
+        <div class="tele-item">
+          <span class="tele-label">Speed / Latency</span>
+          <span id="stat-latency" class="tele-val">—</span>
+        </div>
+        <div class="tele-item">
+          <span id="tele-label-3" class="tele-label">Resolution</span>
+          <span id="stat-res" class="tele-val">—</span>
+        </div>
+        <div class="tele-item">
+          <span class="tele-label">Active Mode</span>
+          <span id="stat-mode" class="tele-val text-accent">Stumps Vision</span>
+        </div>
+      </div>
+
+      <!-- Viewport Display -->
+      <div class="viewport-card">
+        <!-- Loading Spinner Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+          <div class="spinner"></div>
+          <p id="loading-text">Processing frame with YOLO...</p>
+        </div>
+
+        <!-- Initial Placeholder -->
+        <div id="empty-state" class="empty-state">
+          <div class="empty-art">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#253245" stroke-width="1.2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v12M6 12h12"/>
+            </svg>
+          </div>
+          <h3>No Media Selected</h3>
+          <p>Select a quick test scenario above or upload a cricket match image or video.</p>
+        </div>
+
+        <!-- Image Display -->
+        <div id="image-display-wrapper" class="display-wrapper hidden">
+          <img id="result-image" src="" alt="Detection result">
+        </div>
+
+        <!-- Video Display -->
+        <div id="video-display-wrapper" class="display-wrapper hidden">
+          <video id="result-video" controls playsinline></video>
+        </div>
+      </div>
+
+      <!-- Ball Tracking Telemetry Card -->
+      <div id="ball-tracking-card" class="ball-tracking-card hidden">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="calib-icon">⚡</span>
+            <h3>Ball Flight Path & Pitch Impact Map</h3>
+          </div>
+          <span id="ball-status-badge" class="badge-ball-active">BALL TRACKED</span>
+        </div>
+        <div class="calib-grid">
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Delivery Flight</span>
+            <span id="ball-flight-status" class="calib-val text-ball">Active Arc</span>
+            <span id="ball-flight-sub" class="calib-sub">Pitch to Wickets</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Pitch Line</span>
+            <span id="ball-pitch-line" class="calib-val text-accent">—</span>
+            <span class="calib-sub">Off / Middle / Leg</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Trajectory Arc</span>
+            <span id="ball-trail-pts" class="calib-val">—</span>
+            <span class="calib-sub">Points tracked</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Ball Confidence</span>
+            <span id="ball-confidence-val" class="calib-val text-green">—</span>
+            <span class="calib-sub">Detection score</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pitch Calibration Telemetry Card -->
+      <div id="calibration-card" class="calibration-card hidden">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="calib-icon">📐</span>
+            <h3>Pitch Calibration & 22-Yard Geometry</h3>
+          </div>
+          <span id="calib-status-badge" class="badge-calib-active">CALIBRATED (2 WICKETS)</span>
+        </div>
+        <div class="calib-grid">
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Pitch Centerline</span>
+            <span id="calib-dist-px" class="calib-val text-green">— px</span>
+            <span class="calib-sub">↔ 20.12 m (22 yards)</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Longitudinal Scale</span>
+            <span id="calib-scale" class="calib-val text-accent">— px/m</span>
+            <span class="calib-sub">Ground axis density</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Near Ground Contact</span>
+            <span id="calib-near-pt" class="calib-val">—</span>
+            <span class="calib-sub">Bowler / Near base</span>
+          </div>
+          <div class="calib-stat-item">
+            <span class="calib-lbl">Far Ground Contact</span>
+            <span id="calib-far-pt" class="calib-val">—</span>
+            <span class="calib-sub">Batsman / Far base</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detections Breakdown & Actions -->
+      <div id="detections-card" class="detections-card hidden">
+        <div class="card-header">
+          <h3 id="detections-heading">Detected Bounding Elements</h3>
+          <div class="action-buttons">
+            <a id="download-btn" href="#" download class="btn-action download-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Result
+            </a>
+          </div>
+        </div>
+        <div id="boxes-list" class="boxes-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
