@@ -32,6 +32,7 @@ runs/
 # Raw image datasets and local scratch
 ball_dataset_v2/
 ball_dataset/
+ball_image_dataset/
 dataset/
 new data/
 ball!/
@@ -39,4 +40,14 @@ stump_images/
 scratch/
 track/
 yolo11*.pt
+
+# Model backups and fold checkpoints
+weights/kfold_models/
+weights/*backup*.pt
+weights/*pre_kfold*.pt
+weights/ball_kfold_best.pt
+
+
+
+
 
