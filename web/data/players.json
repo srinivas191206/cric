@@ -1,0 +1,62 @@
+[
+  {
+    "id": "player_ss",
+    "team_id": "team_trajecta_squad",
+    "name": "ss",
+    "initials": "SS",
+    "role": "Fast Bowler",
+    "batting_style": "Right",
+    "bowling_style": "Right-arm Fast",
+    "is_admin": true
+  },
+  {
+    "id": "player_srinuu",
+    "team_id": "team_trajecta_squad",
+    "name": "srinuu",
+    "initials": "SR",
+    "role": "Fast Bowler",
+    "batting_style": "Right",
+    "bowling_style": "Right-arm Fast",
+    "is_admin": false
+  },
+  {
+    "id": "player_sandy",
+    "team_id": "team_trajecta_squad",
+    "name": "sandy",
+    "initials": "SA",
+    "role": "Medium Pacer",
+    "batting_style": "Right",
+    "bowling_style": "Right Medium",
+    "is_admin": false
+  },
+  {
+    "id": "player_srinivas",
+    "team_id": "team_trajecta_squad",
+    "name": "srinivas",
+    "initials": "TS",
+    "role": "Pace Bowler",
+    "batting_style": "Right",
+    "bowling_style": "Right-arm Fast",
+    "is_admin": false
+  },
+  {
+    "id": "player_a",
+    "team_id": "team_stumps_xi",
+    "name": "a",
+    "initials": "A",
+    "role": "Fast Bowler",
+    "batting_style": "Right",
+    "bowling_style": "Right-arm Fast",
+    "is_admin": true
+  },
+  {
+    "id": "player_wsa",
+    "team_id": "team_stumps_xi",
+    "name": "wsa",
+    "initials": "WS",
+    "role": "Pace Bowler",
+    "batting_style": "Right",
+    "bowling_style": "Right-arm Fast",
+    "is_admin": false
+  }
+]

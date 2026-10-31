@@ -1,0 +1,20 @@
+[
+  {
+    "id": "team_trajecta_squad",
+    "name": "TRAJECTA Squad",
+    "code": "TRJ",
+    "created_at": "29 Oct 2026",
+    "created_ts": 1793232000,
+    "description": "Trajecta AI High Performance Bowling Squad",
+    "cover_color": "linear-gradient(135deg, #0e1e38 0%, #071120 100%)"
+  },
+  {
+    "id": "team_stumps_xi",
+    "name": "Stumps XI",
+    "code": "STU",
+    "created_at": "25 Oct 2026",
+    "created_ts": 1792886400,
+    "description": "StumpVision Match & Pace Battery",
+    "cover_color": "linear-gradient(135deg, #172554 0%, #0a1128 100%)"
+  }
+]

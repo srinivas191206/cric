@@ -1,0 +1,24 @@
+{
+  "id": "sess_1793038167_22fda9",
+  "name": "sample",
+  "bowler_name": "sample",
+  "bowling_type": "Right-arm Fast",
+  "target_balls": 6,
+  "created_at": "2026-10-26 18:09:27 UTC",
+  "updated_at": "2026-10-26 18:09:27 UTC",
+  "deliveries": [],
+  "stats": {
+    "total_balls": 0,
+    "avg_speed_mph": 0.0,
+    "max_speed_mph": 0.0,
+    "min_speed_mph": 0.0,
+    "avg_speed_kph": 0.0,
+    "avg_swing_sf": 0.0,
+    "avg_spin_deg": 0.0,
+    "length_distribution": {},
+    "line_distribution": {},
+    "consistency_score": 0.0
+  },
+  "player_id": "player_ss",
+  "team_id": "team_trajecta_squad"
+}
