@@ -12405,6 +12405,381 @@ function drawTeamDonutChart(canvasId, totalBadgeId, legendId, slices, category =
   }
 }
 
+// ============================================================================
+// REDESIGNED ADVANCED BATTING STATISTICS DONUT CHARTS (SECTION 3)
+// ============================================================================
+
+function highlightDonutSlice(canvasId, sliceIndex) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !canvas._redrawFn) return;
+  canvas._hoveredIndex = sliceIndex;
+  canvas._redrawFn();
+}
+
+function unhighlightDonutSlice(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !canvas._redrawFn) return;
+  canvas._hoveredIndex = -1;
+  canvas._redrawFn();
+}
+
+function drawAdvancedBattingDonutChart(canvasId, totalBadgeId, legendId, tooltipId, slices, category = 'intent') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const total = slices.reduce((sum, s) => sum + s.count, 0);
+
+  // Update center count in DOM
+  const totalEl = document.getElementById(totalBadgeId);
+  if (totalEl) totalEl.textContent = total;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width || 360;
+  const H = canvas.height || 260;
+  const cx = W / 2;
+  const cy = H / 2;
+  const R = 78;
+  const r = 50;
+
+  function renderChart() {
+    ctx.clearRect(0, 0, W, H);
+
+    // If zero total, render clean empty track ring
+    if (total === 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, (R + r) / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = R - r;
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    const nonZeroSlices = slices.filter(s => s.count > 0);
+    const hasMultiple = nonZeroSlices.length > 1;
+    const gapAngle = hasMultiple ? 0.035 : 0; // Subtle modern gap
+
+    // Layout start base angle
+    let currentAngle = -Math.PI / 2; // Starts at 12 o'clock
+
+    // 1. Draw Donut Segments
+    slices.forEach((slice, idx) => {
+      if (slice.count <= 0) {
+        slice._startAngle = currentAngle;
+        slice._endAngle = currentAngle;
+        slice._midAngle = currentAngle;
+        return;
+      }
+
+      const sliceAngle = (slice.count / total) * Math.PI * 2;
+      const startAngle = currentAngle + (hasMultiple ? gapAngle / 2 : 0);
+      const endAngle = currentAngle + sliceAngle - (hasMultiple ? gapAngle / 2 : 0);
+
+      slice._startAngle = startAngle;
+      slice._endAngle = endAngle;
+      slice._midAngle = (startAngle + endAngle) / 2;
+
+      const isHovered = canvas._hoveredIndex === idx;
+      const isSelected = teamGraphsStatFilter && teamGraphsStatFilter.category === category && teamGraphsStatFilter.value === slice.label;
+      const currentR = isHovered ? R + 4 : R;
+
+      ctx.save();
+
+      // Neon luminescence glow effect
+      ctx.shadowColor = slice.glowColor || slice.color;
+      ctx.shadowBlur = isHovered ? 18 : 10;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, currentR, startAngle, endAngle);
+      ctx.arc(cx, cy, r, endAngle, startAngle, true);
+      ctx.closePath();
+
+      ctx.fillStyle = slice.color;
+      ctx.fill();
+
+      // Active filter outline
+      if (isSelected) {
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      currentAngle += sliceAngle;
+    });
+
+    // 2. Draw Callout Pins & Percentage Labels
+    slices.forEach(slice => {
+      const pctVal = total > 0 ? (slice.count / total) * 100 : 0;
+      const pctText = `${Math.round(pctVal)}%`;
+
+      let pinAngle;
+      let isSpecialZero = false;
+
+      if (slice.count > 0) {
+        pinAngle = slice._midAngle;
+      } else if (category === 'loft' && slice.label === 'Lofted') {
+        // Pinned to 12 o'clock (top)
+        pinAngle = -Math.PI / 2;
+        isSpecialZero = true;
+      } else if (category === 'outcome' && slice.label === 'Leave') {
+        // Pinned to mid-left (9 o'clock)
+        pinAngle = Math.PI;
+        isSpecialZero = true;
+      } else {
+        return; // Don't draw callout for other zero slices
+      }
+
+      const px = cx + Math.cos(pinAngle) * (R + 1);
+      const py = cy + Math.sin(pinAngle) * (R + 1);
+
+      ctx.save();
+
+      // Small colored circle dot on outer ring
+      ctx.beginPath();
+      ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = slice.color;
+      ctx.shadowColor = slice.color;
+      ctx.shadowBlur = 6;
+      ctx.fill();
+
+      // Draw connector pin lines & text
+      ctx.strokeStyle = slice.color;
+      ctx.lineWidth = 1.6;
+      ctx.shadowBlur = 0;
+
+      if (category === 'loft' && isSpecialZero) {
+        // Straight vertical up
+        const topY = py - 16;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, topY);
+        ctx.stroke();
+
+        ctx.font = '700 13px Outfit, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(pctText, px, topY - 2);
+      } else if (category === 'loft' && slice.label === 'Grounded' && slice.count === total) {
+        // Straight vertical down at 6 o'clock
+        const botX = cx;
+        const botY = cy + R + 1;
+        ctx.beginPath();
+        ctx.arc(botX, botY, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = slice.color;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(botX, botY);
+        ctx.lineTo(botX, botY + 16);
+        ctx.stroke();
+
+        ctx.font = '700 13px Outfit, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(pctText, botX, botY + 19);
+      } else if (category === 'outcome' && slice.label === 'Miss') {
+        // Straight vertical up at ~11:45
+        const topY = py - 16;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, topY);
+        ctx.stroke();
+
+        ctx.font = '700 13px Outfit, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(pctText, px, topY - 2);
+      } else if (category === 'outcome' && isSpecialZero && slice.label === 'Leave') {
+        // Straight horizontal left at ~9:00
+        const leftX = px - 18;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(leftX, py);
+        ctx.stroke();
+
+        ctx.font = '700 13px Outfit, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pctText, leftX - 4, py);
+      } else {
+        // Angle-based elbow line
+        const cosA = Math.cos(pinAngle);
+        const sinA = Math.sin(pinAngle);
+        const elbowX = px + cosA * 16;
+        const elbowY = py + sinA * 16;
+        const isRight = cosA >= 0;
+        const tickX = isRight ? elbowX + 16 : elbowX - 16;
+
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(elbowX, elbowY);
+        ctx.lineTo(tickX, elbowY);
+        ctx.stroke();
+
+        ctx.font = '700 13px Outfit, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = isRight ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pctText, isRight ? tickX + 4 : tickX - 4, elbowY);
+      }
+
+      ctx.restore();
+    });
+  }
+
+  canvas._redrawFn = renderChart;
+  canvas._currentSlices = slices;
+  canvas._currentCategory = category;
+
+  renderChart();
+
+  // Attach mouse events for Tooltip & Hover Interactivity (once)
+  if (!canvas._advBound) {
+    canvas._advBound = true;
+    canvas.style.cursor = 'pointer';
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+      const dx = mx - cx;
+      const dy = my - cy;
+      const dist = Math.hypot(dx, dy);
+
+      const tt = document.getElementById(tooltipId);
+      const activeSlices = canvas._currentSlices || [];
+      const tot = activeSlices.reduce((sum, s) => sum + s.count, 0);
+
+      let foundIndex = -1;
+
+      if (dist >= r - 4 && dist <= R + 12 && tot > 0) {
+        let angle = Math.atan2(dy, dx);
+        if (angle < 0) angle += Math.PI * 2;
+
+        activeSlices.forEach((s, idx) => {
+          if (s.count <= 0) return;
+          let sStart = s._startAngle;
+          let sEnd = s._endAngle;
+          // Normalize angles to [0, 2*PI]
+          let aStart = sStart % (Math.PI * 2);
+          if (aStart < 0) aStart += Math.PI * 2;
+          let aEnd = sEnd % (Math.PI * 2);
+          if (aEnd < 0) aEnd += Math.PI * 2;
+
+          let inside = false;
+          if (aStart <= aEnd) {
+            inside = (angle >= aStart && angle <= aEnd);
+          } else {
+            inside = (angle >= aStart || angle <= aEnd);
+          }
+
+          if (inside) {
+            foundIndex = idx;
+          }
+        });
+      }
+
+      if (foundIndex !== -1) {
+        const s = activeSlices[foundIndex];
+        const pctFormatted = tot > 0 ? ((s.count / tot) * 100).toFixed(1) : '0.0';
+
+        if (canvas._hoveredIndex !== foundIndex) {
+          canvas._hoveredIndex = foundIndex;
+          renderChart();
+        }
+
+        // Highlight table row in legend
+        const leg = document.getElementById(legendId);
+        if (leg) {
+          leg.querySelectorAll('.acc-table-row').forEach(row => {
+            row.classList.toggle('hover-highlight', parseInt(row.getAttribute('data-slice-index')) === foundIndex);
+          });
+        }
+
+        // Position Tooltip
+        if (tt) {
+          tt.innerHTML = `
+            <div class="acc-tt-header">
+              <span class="acc-tt-dot" style="background: ${s.color};"></span>
+              <span>${s.label}</span>
+            </div>
+            <div class="acc-tt-body">
+              <span>${s.count} shots</span>
+              <span class="acc-tt-pct" style="color: ${s.color};">${pctFormatted}%</span>
+            </div>
+          `;
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          tt.style.left = `${Math.min(rect.width - 110, Math.max(8, offsetX + 10))}px`;
+          tt.style.top = `${Math.min(rect.height - 50, Math.max(8, offsetY - 38))}px`;
+          tt.classList.add('visible');
+        }
+      } else {
+        if (canvas._hoveredIndex !== -1) {
+          canvas._hoveredIndex = -1;
+          renderChart();
+        }
+        if (tt) tt.classList.remove('visible');
+        const leg = document.getElementById(legendId);
+        if (leg) {
+          leg.querySelectorAll('.acc-table-row').forEach(row => row.classList.remove('hover-highlight'));
+        }
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      canvas._hoveredIndex = -1;
+      renderChart();
+      const tt = document.getElementById(tooltipId);
+      if (tt) tt.classList.remove('visible');
+      const leg = document.getElementById(legendId);
+      if (leg) {
+        leg.querySelectorAll('.acc-table-row').forEach(row => row.classList.remove('hover-highlight'));
+      }
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (canvas._hoveredIndex !== -1) {
+        const s = (canvas._currentSlices || [])[canvas._hoveredIndex];
+        if (s) {
+          setTeamGraphsStatFilter(category, s.label, s.label);
+        }
+      }
+    });
+  }
+
+  // 3. Render Structured 3-Column Breakdown Table
+  const legendEl = document.getElementById(legendId);
+  if (legendEl) {
+    legendEl.innerHTML = slices.map((s, idx) => {
+      const pct = total > 0 ? ((s.count / total) * 100).toFixed(1) : '0.0';
+      const isSelected = teamGraphsStatFilter && teamGraphsStatFilter.category === category && teamGraphsStatFilter.value === s.label;
+      return `
+        <div class="acc-table-row ${isSelected ? 'active-filter' : ''}" 
+             data-slice-index="${idx}"
+             onclick="setTeamGraphsStatFilter('${category}', '${s.label}', '${s.label}')"
+             onmouseenter="highlightDonutSlice('${canvasId}', ${idx})"
+             onmouseleave="unhighlightDonutSlice('${canvasId}')">
+          <div class="atr-left">
+            <span class="atr-dot" style="background: ${s.color};"></span>
+            <span>${s.label}</span>
+          </div>
+          <div class="atr-count">${s.count}</div>
+          <div class="atr-pct">${pct}%</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
 function renderTeamGraphs() {
   if (!currentTeamAnalysisBundle) return;
   const activeDeliveries = getActiveTeamAnalysisDeliveries();
@@ -12513,23 +12888,53 @@ function renderTeamGraphs() {
     { label: 'Back Foot', count: footworkCounts['Back Foot'] || 0, color: '#f59e0b' }
   ], 'footwork');
 
-  // 3. Advanced Batting Statistics (Screenshot 4):
-  drawTeamDonutChart('team-intent-dist-canvas', 'intent-dist-total-count', 'intent-dist-legend', [
-    { label: 'Aggressive', count: intentCounts['Aggressive'] || 0, color: '#ef4444' },
-    { label: 'Defensive', count: intentCounts['Defensive'] || 0, color: '#1e3a5f' }
-  ], 'intent');
+  // 3. Advanced Batting Statistics (Section 3 Redesigned):
+  const advTotalShotsEl = document.getElementById('adv-header-total-shots');
+  if (advTotalShotsEl) {
+    advTotalShotsEl.textContent = activeDeliveries.length;
+  }
+  const advCoverageEl = document.getElementById('adv-header-coverage');
+  if (advCoverageEl) {
+    advCoverageEl.textContent = activeDeliveries.length > 0 ? '100%' : '0%';
+  }
 
-  drawTeamDonutChart('team-loft-dist-canvas', 'loft-dist-total-count', 'loft-dist-legend', [
-    { label: 'Grounded', count: loftCounts['Grounded'] || 0, color: '#f59e0b' },
-    { label: 'Lofted', count: loftCounts['Lofted'] || 0, color: '#06b6d4' }
-  ], 'loft');
+  drawAdvancedBattingDonutChart(
+    'team-intent-dist-canvas',
+    'intent-dist-total-count',
+    'intent-dist-legend',
+    'intent-tooltip',
+    [
+      { label: 'Aggressive', count: intentCounts['Aggressive'] || 0, color: '#F00035', glowColor: 'rgba(240, 0, 53, 0.45)' },
+      { label: 'Defensive', count: intentCounts['Defensive'] || 0, color: '#2685F5', glowColor: 'rgba(38, 133, 245, 0.45)' }
+    ],
+    'intent'
+  );
 
-  drawTeamDonutChart('team-outcomes-dist-canvas', 'outcomes-dist-total-count', 'outcomes-dist-legend', [
-    { label: 'Middled', count: outcomeCounts['Middled'] || 0, color: '#10b981' },
-    { label: 'Average', count: outcomeCounts['Average'] || 0, color: '#f59e0b' },
-    { label: 'Leave', count: outcomeCounts['Leave'] || 0, color: '#1e3a5f' },
-    { label: 'Miss', count: outcomeCounts['Miss'] || 0, color: '#ef4444' }
-  ], 'outcome');
+  drawAdvancedBattingDonutChart(
+    'team-loft-dist-canvas',
+    'loft-dist-total-count',
+    'loft-dist-legend',
+    'loft-tooltip',
+    [
+      { label: 'Grounded', count: loftCounts['Grounded'] || 0, color: '#FFAB00', glowColor: 'rgba(255, 171, 0, 0.45)' },
+      { label: 'Lofted', count: loftCounts['Lofted'] || 0, color: '#00B8D9', glowColor: 'rgba(0, 184, 217, 0.45)' }
+    ],
+    'loft'
+  );
+
+  drawAdvancedBattingDonutChart(
+    'team-outcomes-dist-canvas',
+    'outcomes-dist-total-count',
+    'outcomes-dist-legend',
+    'outcomes-tooltip',
+    [
+      { label: 'Middled', count: outcomeCounts['Middled'] || 0, color: '#00C58A', glowColor: 'rgba(0, 197, 138, 0.45)' },
+      { label: 'Average', count: outcomeCounts['Average'] || 0, color: '#FFAB00', glowColor: 'rgba(255, 171, 0, 0.45)' },
+      { label: 'Leave', count: outcomeCounts['Leave'] || 0, color: '#2685F5', glowColor: 'rgba(38, 133, 245, 0.45)' },
+      { label: 'Miss', count: outcomeCounts['Miss'] || 0, color: '#F00035', glowColor: 'rgba(240, 0, 53, 0.45)' }
+    ],
+    'outcome'
+  );
 
   // 4. Bowling Analysis (Speed, Spin, and Swing):
   renderTeamBowlingAnalysis(activeDeliveries);
