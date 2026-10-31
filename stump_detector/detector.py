@@ -332,11 +332,15 @@ def render_calibrated_pitch_overlay(frame, calib_model, render_mode="black_stump
     if frc_r_front and frc_r_back:
         cv2.line(annotated, frc_r_front, frc_r_back, white, 2, cv2.LINE_AA)
 
-    # 3 Black Stumps
-    if render_mode == "black_stumps":
+    # 3 Black or Yellow Stumps
+    if render_mode in ("black_stumps", "yellow_stumps"):
+        stump_color = (15, 225, 245) if render_mode == "yellow_stumps" else (15, 15, 15)
+        stump_outline = (10, 160, 200) if render_mode == "yellow_stumps" else (245, 245, 245)
         for item in [near, far]:
+            if item is near and item.get("synthetic", False):
+                continue
             x1, y1, x2, y2 = item['box']
-            draw_three_black_stumps(annotated, x1, y1, x2, y2)
+            draw_three_black_stumps(annotated, x1, y1, x2, y2, color=stump_color, outline=stump_outline)
             xc = (x1 + x2) / 2.0
             yc = float(y2)
             gx, gy = int(round(xc)), int(round(yc))

@@ -50,8 +50,10 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 ---
 
 ## Models & Performance
-- **Ball Detection**: Fine-tuned on Apple Silicon MPS with hard negative background mining.
-  - Test set mAP@50: **94.05%**
+- **Ball Detection**: Fine-tuned YOLO11s on Apple Silicon MPS with unified 797-image multi-source dataset and hard negative background mining.
+  - Unseen Test set mAP@50: **98.54%**
+  - Unseen Test set Precision: **98.32%**
+  - Unseen Test set Recall: **95.95%**
   - Full delivery tracking continuity: **37 frames** per delivery
   - False positive shoe detections: **0**
 - **Inference Speed**: ~6.3 ms / frame (150+ FPS)
