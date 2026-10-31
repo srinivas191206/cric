@@ -1430,11 +1430,14 @@
             </div>
 
             <!-- SECTION 4: Bowling Analysis (Speed, Spin, and Swing) -->
-            <div class="tgraphs-section-card" id="tgraphs-bowling-card">
-              <div class="tgraphs-section-header">
+            <div class="tgraphs-section-card bowling-section-card" id="tgraphs-bowling-card">
+              <div class="tgraphs-section-header bowling-section-header">
                 <div class="tsh-left">
                   <div class="tsh-icon tsh-icon-yellow">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><polyline points="6 15 11 9 16 13 21 6"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.3">
+                      <path d="M3 3v18h18"/>
+                      <polyline points="6 15 11 9 16 13 21 6"/>
+                    </svg>
                   </div>
                   <div>
                     <h3 class="tsh-title">Bowling Analysis</h3>
@@ -1448,64 +1451,139 @@
                 <!-- BLOCK 1: Speed Analysis -->
                 <div class="bowling-analysis-block" id="bowling-speed-block">
                   <div class="bab-header">
-                    <h4 class="bab-title">Speed Analysis</h4>
-                    <p class="bab-sub">Bowling speed variation throughout sessions</p>
+                    <div class="bab-header-left">
+                      <div class="bab-icon-badge bab-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2685F5" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M16.24 7.76a6 6 0 0 1 0 8.49"/>
+                          <path d="M12 12l3.5-3.5"/>
+                          <circle cx="12" cy="12" r="1.5" fill="#2685F5"/>
+                        </svg>
+                      </div>
+                      <div class="bab-titles">
+                        <h4 class="bab-title">Speed Analysis</h4>
+                        <p class="bab-sub">Bowling speed variation throughout sessions</p>
+                      </div>
+                    </div>
+                    <div class="bab-header-right">
+                      <button type="button" class="bab-view-delivs-btn" onclick="switchTeamAnalysisTab('deliveries')" title="View deliveries list">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>View Deliveries</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                    </div>
                   </div>
+
                   <div class="bab-main-row">
                     <!-- Vertical Range Slider -->
                     <div class="bab-slider-col">
+                      <div class="bab-range-title">Speed Range</div>
                       <div class="bab-input-box">
                         <span class="bab-input-label">MAX</span>
                         <div class="bab-stepper-wrap">
-                          <input type="number" id="speed-slider-max-input" class="bab-num-input" value="129" step="1" onchange="onBowlingFilterInputChange('speed', 'max', this.value)">
+                          <input type="number" id="speed-slider-max-input" class="bab-num-input" value="97" step="1" onchange="onBowlingFilterInputChange('speed', 'max', this.value)">
                           <div class="bab-steppers">
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('speed', 'max', 1)">▲</button>
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('speed', 'max', -1)">▼</button>
                           </div>
                         </div>
-                        <span class="bab-unit-label" id="speed-slider-max-unit">km/h</span>
+                        <span class="bab-unit-label" id="speed-slider-max-unit">mph</span>
                       </div>
                       
-                      <div class="bab-vertical-slider-track" id="speed-slider-track" data-metric="speed">
-                        <div class="bab-vslider-fill" id="speed-vslider-fill"></div>
-                        <div class="bab-vslider-handle handle-max" id="speed-vslider-handle-max"></div>
-                        <div class="bab-vslider-handle handle-min" id="speed-vslider-handle-min"></div>
+                      <div class="bab-vertical-slider-track vtrack-blue" id="speed-slider-track" data-metric="speed">
+                        <div class="bab-vslider-fill vfill-blue" id="speed-vslider-fill"></div>
+                        <div class="bab-vslider-handle handle-max vhandle-blue" id="speed-vslider-handle-max"></div>
+                        <div class="bab-vslider-handle handle-min vhandle-blue" id="speed-vslider-handle-min"></div>
                       </div>
                       
                       <div class="bab-input-box">
                         <span class="bab-input-label">MIN</span>
                         <div class="bab-stepper-wrap">
-                          <input type="number" id="speed-slider-min-input" class="bab-num-input" value="68" step="1" onchange="onBowlingFilterInputChange('speed', 'min', this.value)">
+                          <input type="number" id="speed-slider-min-input" class="bab-num-input" value="42" step="1" onchange="onBowlingFilterInputChange('speed', 'min', this.value)">
                           <div class="bab-steppers">
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('speed', 'min', 1)">▲</button>
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('speed', 'min', -1)">▼</button>
                           </div>
                         </div>
-                        <span class="bab-unit-label" id="speed-slider-min-unit">km/h</span>
+                        <span class="bab-unit-label" id="speed-slider-min-unit">mph</span>
                       </div>
 
                       <button type="button" class="bab-reset-btn" onclick="resetBowlingMetricFilter('speed')">Reset</button>
                     </div>
 
-                    <!-- Canvas Chart -->
+                    <!-- Canvas Chart with Top Legend & Unit Dropdown -->
                     <div class="bab-chart-col">
-                      <canvas id="team-bowling-speed-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+                      <div class="bab-chart-top-bar">
+                        <div class="bab-chart-legend">
+                          <div class="bcl-item">
+                            <span class="bcl-dot dot-blue"></span>
+                            <span>Delivery Speed</span>
+                          </div>
+                          <div class="bcl-item">
+                            <span class="bcl-dash dash-yellow"></span>
+                            <span id="speed-legend-avg-val">Average (92.0 mph)</span>
+                          </div>
+                        </div>
+                        <div class="bab-unit-selector">
+                          <div class="bab-unit-dropdown-wrap">
+                            <button type="button" class="bab-unit-select-btn" id="speed-unit-select-btn" onclick="toggleSpeedUnitDropdown(event)">
+                              <span id="speed-unit-active-text">mph</span>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="bab-unit-menu hidden" id="speed-unit-menu">
+                              <button type="button" class="bab-unit-menu-item" onclick="setTeamAnalysisSpeedUnit('mph')">mph</button>
+                              <button type="button" class="bab-unit-menu-item" onclick="setTeamAnalysisSpeedUnit('kph')">km/h</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="bab-canvas-container" id="speed-canvas-container">
+                        <canvas id="team-bowling-speed-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+                        <div class="bab-chart-tooltip" id="speed-chart-tooltip"></div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Bottom Metrics -->
+                  <!-- Bottom Summary Statistics -->
                   <div class="bab-metrics-row">
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-blue" id="speed-metric-min">67.6</span>
-                      <span class="bab-metric-lbl">Min Speed (<span class="unit-speed-text">km/h</span>)</span>
+                      <div class="bmc-icon bmc-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2685F5" stroke-width="2.2">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-blue"><span id="speed-metric-min">42.0</span> <span class="bmc-unit unit-speed-text">mph</span></span>
+                        <span class="bab-metric-lbl">Min Speed <span class="info-icon" title="Minimum recorded speed across active deliveries">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-yellow" id="speed-metric-avg">78.6</span>
-                      <span class="bab-metric-lbl">Average (median) (<span class="unit-speed-text">km/h</span>) <span class="info-icon" title="Median release velocity across active deliveries">ⓘ</span></span>
+                      <div class="bmc-icon bmc-icon-yellow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <line x1="18" y1="20" x2="18" y2="10"/>
+                          <line x1="12" y1="20" x2="12" y2="4"/>
+                          <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-yellow"><span id="speed-metric-avg">92.0</span> <span class="bmc-unit unit-speed-text">mph</span></span>
+                        <span class="bab-metric-lbl">Average (median) <span class="info-icon" title="Median release velocity across active deliveries">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-blue" id="speed-metric-max">129.0</span>
-                      <span class="bab-metric-lbl">Max Speed (<span class="unit-speed-text">km/h</span>)</span>
+                      <div class="bmc-icon bmc-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2685F5" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M16.24 7.76a6 6 0 0 1 0 8.49"/>
+                          <path d="M12 12l3.5-3.5"/>
+                          <circle cx="12" cy="12" r="1.5" fill="#2685F5"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-blue"><span id="speed-metric-max">96.9</span> <span class="bmc-unit unit-speed-text">mph</span></span>
+                        <span class="bab-metric-lbl">Max Speed <span class="info-icon" title="Maximum recorded speed across active deliveries">ⓘ</span></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1513,16 +1591,35 @@
                 <!-- BLOCK 2: Spin Analysis -->
                 <div class="bowling-analysis-block" id="bowling-spin-block">
                   <div class="bab-header">
-                    <h4 class="bab-title">Spin Analysis</h4>
-                    <p class="bab-sub">Spin rate and direction patterns</p>
+                    <div class="bab-header-left">
+                      <div class="bab-icon-badge bab-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 2a10 10 0 0 1 10 10c0 4-3 7-7 7a5 5 0 0 1-5-5c0-2 1.5-3.5 3.5-3.5a2 2 0 0 1 2 2"/>
+                        </svg>
+                      </div>
+                      <div class="bab-titles">
+                        <h4 class="bab-title">Spin Analysis</h4>
+                        <p class="bab-sub">Spin rate and direction patterns</p>
+                      </div>
+                    </div>
+                    <div class="bab-header-right">
+                      <button type="button" class="bab-view-delivs-btn" onclick="switchTeamAnalysisTab('deliveries')" title="View deliveries list">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>View Deliveries</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                    </div>
                   </div>
+
                   <div class="bab-main-row">
                     <!-- Vertical Range Slider -->
                     <div class="bab-slider-col">
+                      <div class="bab-range-title">Spin Range</div>
                       <div class="bab-input-box">
                         <span class="bab-input-label">MAX</span>
                         <div class="bab-stepper-wrap">
-                          <input type="number" id="spin-slider-max-input" class="bab-num-input" value="8.6" step="0.1" onchange="onBowlingFilterInputChange('spin', 'max', this.value)">
+                          <input type="number" id="spin-slider-max-input" class="bab-num-input" value="8.8" step="0.1" onchange="onBowlingFilterInputChange('spin', 'max', this.value)">
                           <div class="bab-steppers">
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('spin', 'max', 0.5)">▲</button>
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('spin', 'max', -0.5)">▼</button>
@@ -1531,16 +1628,16 @@
                         <span class="bab-unit-label">°</span>
                       </div>
 
-                      <div class="bab-vertical-slider-track" id="spin-slider-track" data-metric="spin">
-                        <div class="bab-vslider-fill" id="spin-vslider-fill"></div>
-                        <div class="bab-vslider-handle handle-max" id="spin-vslider-handle-max"></div>
-                        <div class="bab-vslider-handle handle-min" id="spin-vslider-handle-min"></div>
+                      <div class="bab-vertical-slider-track vtrack-purple" id="spin-slider-track" data-metric="spin">
+                        <div class="bab-vslider-fill vfill-purple" id="spin-vslider-fill"></div>
+                        <div class="bab-vslider-handle handle-max vhandle-purple" id="spin-vslider-handle-max"></div>
+                        <div class="bab-vslider-handle handle-min vhandle-purple" id="spin-vslider-handle-min"></div>
                       </div>
 
                       <div class="bab-input-box">
                         <span class="bab-input-label">MIN</span>
                         <div class="bab-stepper-wrap">
-                          <input type="number" id="spin-slider-min-input" class="bab-num-input" value="0.2" step="0.1" onchange="onBowlingFilterInputChange('spin', 'min', this.value)">
+                          <input type="number" id="spin-slider-min-input" class="bab-num-input" value="1.8" step="0.1" onchange="onBowlingFilterInputChange('spin', 'min', this.value)">
                           <div class="bab-steppers">
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('spin', 'min', 0.5)">▲</button>
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('spin', 'min', -0.5)">▼</button>
@@ -1552,52 +1649,106 @@
                       <button type="button" class="bab-reset-btn" onclick="resetBowlingMetricFilter('spin')">Reset</button>
                     </div>
 
-                    <!-- Canvas Chart with Legend -->
+                    <!-- Canvas Chart with Top Legend & Unit Dropdown -->
                     <div class="bab-chart-col">
-                      <div class="bab-chart-legend">
-                        <div class="bcl-item"><span class="bcl-dot dot-green"></span><span>Right spin</span></div>
-                        <div class="bcl-item"><span class="bcl-dot dot-red"></span><span>Left spin</span></div>
-                        <div class="bcl-item"><span class="bcl-dot dot-gray"></span><span>No movement</span></div>
+                      <div class="bab-chart-top-bar">
+                        <div class="bab-chart-legend">
+                          <div class="bcl-item"><span class="bcl-dot dot-green"></span><span>Right spin</span></div>
+                          <div class="bcl-item"><span class="bcl-dot dot-red"></span><span>Left spin</span></div>
+                          <div class="bcl-item"><span class="bcl-dot dot-gray"></span><span>No movement</span></div>
+                          <div class="bcl-item"><span class="bcl-line-dot line-purple"></span><span>Spin Rate</span></div>
+                        </div>
+                        <div class="bab-unit-selector">
+                          <button type="button" class="bab-unit-select-btn" title="Spin Unit">
+                            <span>°</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                        </div>
                       </div>
-                      <canvas id="team-bowling-spin-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+
+                      <div class="bab-canvas-container" id="spin-canvas-container">
+                        <canvas id="team-bowling-spin-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+                        <div class="bab-chart-tooltip" id="spin-chart-tooltip"></div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Bottom Metrics -->
+                  <!-- Bottom Summary Statistics -->
                   <div class="bab-metrics-row">
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-purple" id="spin-metric-min">1.8°</span>
-                      <span class="bab-metric-lbl">Min Spin</span>
+                      <div class="bmc-icon bmc-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 2a10 10 0 0 1 10 10c0 4-3 7-7 7a5 5 0 0 1-5-5c0-2 1.5-3.5 3.5-3.5a2 2 0 0 1 2 2"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-purple"><span id="spin-metric-min">1.8°</span><span class="spin-arrow">↑</span></span>
+                        <span class="bab-metric-lbl">Min Spin <span class="info-icon" title="Minimum recorded angular deviation">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-yellow" id="spin-metric-avg">5.2°</span>
-                      <span class="bab-metric-lbl">Average (median) <span class="info-icon" title="Median angular deviation across active deliveries">ⓘ</span></span>
+                      <div class="bmc-icon bmc-icon-yellow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <line x1="18" y1="20" x2="18" y2="10"/>
+                          <line x1="12" y1="20" x2="12" y2="4"/>
+                          <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-yellow"><span id="spin-metric-avg">5.3°</span><span class="spin-arrow">↑</span></span>
+                        <span class="bab-metric-lbl">Average (median) <span class="info-icon" title="Median angular deviation across active deliveries">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-purple" id="spin-metric-max">8.8°</span>
-                      <span class="bab-metric-lbl">Max Spin</span>
+                      <div class="bmc-icon bmc-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 2a10 10 0 0 1 10 10c0 4-3 7-7 7a5 5 0 0 1-5-5c0-2 1.5-3.5 3.5-3.5a2 2 0 0 1 2 2"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-purple"><span id="spin-metric-max">8.8°</span><span class="spin-arrow">↑</span></span>
+                        <span class="bab-metric-lbl">Max Spin <span class="info-icon" title="Maximum recorded angular deviation">ⓘ</span></span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- BLOCK 3: Swing Analysis -->
                 <div class="bowling-analysis-block" id="bowling-swing-block">
-                  <div class="bab-header bab-header-with-btn">
-                    <div>
-                      <h4 class="bab-title">Swing Analysis</h4>
-                      <p class="bab-sub">Ball movement through the air</p>
+                  <div class="bab-header">
+                    <div class="bab-header-left">
+                      <div class="bab-icon-badge bab-icon-amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                        </svg>
+                      </div>
+                      <div class="bab-titles">
+                        <h4 class="bab-title">Swing Analysis</h4>
+                        <p class="bab-sub">Ball movement through the air</p>
+                      </div>
                     </div>
-                    <button type="button" class="bab-info-pill-btn" onclick="openSwingForceModal()">
-                      What is Swing Force? ⓘ
-                    </button>
+                    <div class="bab-header-right">
+                      <button type="button" class="bab-info-pill-btn" onclick="openSwingForceModal()">
+                        What is Swing Force? ⓘ
+                      </button>
+                      <button type="button" class="bab-view-delivs-btn" onclick="switchTeamAnalysisTab('deliveries')" title="View deliveries list">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>View Deliveries</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                    </div>
                   </div>
+
                   <div class="bab-main-row">
                     <!-- Vertical Range Slider -->
                     <div class="bab-slider-col">
+                      <div class="bab-range-title">Swing Range</div>
                       <div class="bab-input-box">
                         <span class="bab-input-label">MAX</span>
                         <div class="bab-stepper-wrap">
-                          <input type="number" id="swing-slider-max-input" class="bab-num-input" value="2.7" step="0.1" onchange="onBowlingFilterInputChange('swing', 'max', this.value)">
+                          <input type="number" id="swing-slider-max-input" class="bab-num-input" value="1.5" step="0.1" onchange="onBowlingFilterInputChange('swing', 'max', this.value)">
                           <div class="bab-steppers">
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('swing', 'max', 0.2)">▲</button>
                             <button type="button" class="bab-step-btn" onclick="stepBowlingFilterInput('swing', 'max', -0.2)">▼</button>
@@ -1606,10 +1757,10 @@
                         <span class="bab-unit-label">SF</span>
                       </div>
 
-                      <div class="bab-vertical-slider-track" id="swing-slider-track" data-metric="swing">
-                        <div class="bab-vslider-fill" id="swing-vslider-fill"></div>
-                        <div class="bab-vslider-handle handle-max" id="swing-vslider-handle-max"></div>
-                        <div class="bab-vslider-handle handle-min" id="swing-vslider-handle-min"></div>
+                      <div class="bab-vertical-slider-track vtrack-amber" id="swing-slider-track" data-metric="swing">
+                        <div class="bab-vslider-fill vfill-amber" id="swing-vslider-fill"></div>
+                        <div class="bab-vslider-handle handle-max vhandle-amber" id="swing-vslider-handle-max"></div>
+                        <div class="bab-vslider-handle handle-min vhandle-amber" id="swing-vslider-handle-min"></div>
                       </div>
 
                       <div class="bab-input-box">
@@ -1627,30 +1778,68 @@
                       <button type="button" class="bab-reset-btn" onclick="resetBowlingMetricFilter('swing')">Reset</button>
                     </div>
 
-                    <!-- Canvas Chart with Legend -->
+                    <!-- Canvas Chart with Top Legend & Unit Indicator -->
                     <div class="bab-chart-col">
-                      <div class="bab-chart-legend">
-                        <div class="bcl-item"><span class="bcl-dot dot-navy"></span><span>Right swing</span></div>
-                        <div class="bcl-item"><span class="bcl-dot dot-orange"></span><span>Left swing</span></div>
-                        <div class="bcl-item"><span class="bcl-dot dot-gray"></span><span>No movement</span></div>
+                      <div class="bab-chart-top-bar">
+                        <div class="bab-chart-legend">
+                          <div class="bcl-item"><span class="bcl-dot dot-blue"></span><span>Right swing</span></div>
+                          <div class="bcl-item"><span class="bcl-dot dot-orange"></span><span>Left swing</span></div>
+                          <div class="bcl-item"><span class="bcl-dot dot-gray"></span><span>No movement</span></div>
+                          <div class="bcl-item"><span class="bcl-line-dot line-amber"></span><span>Swing Force</span></div>
+                        </div>
+                        <div class="bab-unit-selector">
+                          <button type="button" class="bab-unit-select-btn" title="Swing Force Unit">
+                            <span>SF</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                        </div>
                       </div>
-                      <canvas id="team-bowling-swing-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+
+                      <div class="bab-canvas-container" id="swing-canvas-container">
+                        <canvas id="team-bowling-swing-canvas" class="bab-line-canvas" width="900" height="260"></canvas>
+                        <div class="bab-chart-tooltip" id="swing-chart-tooltip"></div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Bottom Metrics -->
+                  <!-- Bottom Summary Statistics -->
                   <div class="bab-metrics-row">
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-orange" id="swing-metric-min">0.1</span>
-                      <span class="bab-metric-lbl">Min Swing Force</span>
+                      <div class="bmc-icon bmc-icon-amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-orange"><span id="swing-metric-min">0.1</span> <span class="bmc-unit">SF</span></span>
+                        <span class="bab-metric-lbl">Min Swing Force <span class="info-icon" title="Minimum recorded lateral deviation">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-yellow" id="swing-metric-avg">0.9</span>
-                      <span class="bab-metric-lbl">Average (median) <span class="info-icon" title="Median lateral aerodynamic deviation across active deliveries">ⓘ</span></span>
+                      <div class="bmc-icon bmc-icon-yellow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <line x1="18" y1="20" x2="18" y2="10"/>
+                          <line x1="12" y1="20" x2="12" y2="4"/>
+                          <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-yellow"><span id="swing-metric-avg">0.9</span> <span class="bmc-unit">SF</span></span>
+                        <span class="bab-metric-lbl">Average (median) <span class="info-icon" title="Median lateral aerodynamic deviation across active deliveries">ⓘ</span></span>
+                      </div>
                     </div>
                     <div class="bab-metric-card">
-                      <span class="bab-metric-val val-orange" id="swing-metric-max">1.5</span>
-                      <span class="bab-metric-lbl">Max Swing Force</span>
+                      <div class="bmc-icon bmc-icon-amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <circle cx="12" cy="12" r="6"/>
+                          <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                      </div>
+                      <div class="bmc-content">
+                        <span class="bab-metric-val val-orange"><span id="swing-metric-max">1.5</span> <span class="bmc-unit">SF</span></span>
+                        <span class="bab-metric-lbl">Max Swing Force <span class="info-icon" title="Maximum recorded lateral deviation">ⓘ</span></span>
+                      </div>
                     </div>
                   </div>
                 </div>

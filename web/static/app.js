@@ -12986,6 +12986,11 @@ function renderTeamBowlingAnalysis(deliveries) {
   if (speedAvgEl) speedAvgEl.textContent = medianSpeed.toFixed(1);
   if (speedMaxEl) speedMaxEl.textContent = maxSpeed.toFixed(1);
 
+  const speedLegendAvg = document.getElementById('speed-legend-avg-val');
+  if (speedLegendAvg) speedLegendAvg.textContent = `Average (${medianSpeed.toFixed(1)} ${isMph ? 'mph' : 'km/h'})`;
+  const speedActiveUnit = document.getElementById('speed-unit-active-text');
+  if (speedActiveUnit) speedActiveUnit.textContent = isMph ? 'mph' : 'km/h';
+
   document.querySelectorAll('.unit-speed-text').forEach(el => el.textContent = isMph ? 'mph' : 'km/h');
   const sMaxUnit = document.getElementById('speed-slider-max-unit');
   const sMinUnit = document.getElementById('speed-slider-min-unit');
@@ -13203,20 +13208,11 @@ function drawTeamBowlingSpeedChart(canvasId, deliveries, unit) {
   const W = canvas.width;
   const H = canvas.height;
 
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#091222';
-  ctx.fillRect(0, 0, W, H);
-
-  if (!deliveries || deliveries.length === 0) {
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 14px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No delivery speed data in active selection', W / 2, H / 2);
-    return;
-  }
-
   const isMph = unit === 'mph';
-  const data = deliveries.map((d, i) => {
+  const allDelivs = currentTeamAnalysisBundle?.all_deliveries || deliveries || [];
+  const sourceDelivs = (deliveries && deliveries.length > 0) ? deliveries : allDelivs;
+
+  const data = sourceDelivs.map((d, i) => {
     const val = isMph
       ? (d.speed_mph || (d.speed_kph ? d.speed_kph / 1.60934 : 80))
       : (d.speed_kph || (d.speed_mph ? d.speed_mph * 1.60934 : 128));
@@ -13229,106 +13225,243 @@ function drawTeamBowlingSpeedChart(canvasId, deliveries, unit) {
   });
 
   const speeds = data.map(d => d.speed);
-  const minSpeed = Math.min(...speeds);
-  const maxSpeed = Math.max(...speeds);
+  const minSpeed = speeds.length > 0 ? Math.min(...speeds) : (isMph ? 40 : 60);
+  const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : (isMph ? 100 : 160);
   const sorted = [...speeds].sort((a, b) => a - b);
-  const medianSpeed = sorted[Math.floor(sorted.length / 2)];
+  const medianSpeed = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 92.0;
 
-  const padL = 75;
+  const padL = 72;
   const padR = 40;
-  const padT = 30;
-  const padB = 40;
+  const padT = 32;
+  const padB = 42;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const yMin = Math.max(0, Math.floor(minSpeed * 0.90));
-  const yMax = Math.ceil(maxSpeed * 1.10);
+  // Discrete, neat Y ticks matching reference image
+  let yMin = isMph ? 40 : 60;
+  let yMax = isMph ? 100 : 160;
+  if (minSpeed < yMin) yMin = Math.floor(minSpeed / 10) * 10;
+  if (maxSpeed > yMax) yMax = Math.ceil(maxSpeed / 10) * 10;
   const yRange = (yMax - yMin) || 1;
 
   const getX = (idx) => padL + (idx / Math.max(1, data.length - 1)) * plotW;
   const getY = (val) => padT + plotH - ((val - yMin) / yRange) * plotH;
 
-  // Grid Lines
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const yVal = yMin + (yRange / 4) * i;
-    const yPos = getY(yVal);
-    ctx.beginPath();
-    ctx.moveTo(padL, yPos);
-    ctx.lineTo(W - padR, yPos);
-    ctx.stroke();
-  }
+  function render(hoveredIdx = -1) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#080E1A';
+    ctx.fillRect(0, 0, W, H);
 
-  const stepX = data.length > 20 ? 5 : (data.length > 10 ? 2 : 1);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  data.forEach((d, i) => {
-    if (d.index === 1 || d.index % stepX === 0 || d.index === data.length) {
-      const xPos = getX(i);
+    if (data.length === 0) {
+      ctx.fillStyle = '#64748B';
+      ctx.font = '600 14px Outfit, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No delivery speed data in active selection', W / 2, H / 2);
+      return;
+    }
+
+    // Grid Lines & Y-axis labels
+    const ySteps = 4;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    ctx.font = '600 11px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#94A3B8';
+
+    for (let i = 0; i <= ySteps; i++) {
+      const yVal = yMin + (yRange / ySteps) * i;
+      const yPos = getY(yVal);
       ctx.beginPath();
-      ctx.moveTo(xPos, padT);
-      ctx.lineTo(xPos, padT + plotH);
+      ctx.moveTo(padL, yPos);
+      ctx.lineTo(W - padR, yPos);
+      ctx.stroke();
+
+      ctx.fillText(`${Math.round(yVal)}`, padL - 12, yPos + 4);
+    }
+
+    // Vertical Y-Axis Title
+    ctx.save();
+    ctx.translate(18, padT + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Speed (${isMph ? 'mph' : 'km/h'})`, 0, 0);
+    ctx.restore();
+
+    // Delivery numbers on X-axis
+    ctx.font = '600 10.5px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'center';
+    data.forEach((d, i) => {
+      const xPos = getX(i);
+      ctx.fillStyle = (hoveredIdx === i) ? '#F4F5F8' : '#64748B';
+      ctx.beginPath();
+      ctx.moveTo(xPos, padT + plotH);
+      ctx.lineTo(xPos, padT + plotH + 4);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.stroke();
       ctx.fillText(`${d.index}`, xPos, padT + plotH + 18);
-    }
-  });
+    });
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 12px system-ui, sans-serif';
-  ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
+    // X-Axis Title
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
 
-  // Yellow Dashed Line for Median
-  const medianY = getY(medianSpeed);
-  ctx.save();
-  ctx.strokeStyle = '#facc15';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 4]);
-  ctx.beginPath();
-  ctx.moveTo(padL, medianY);
-  ctx.lineTo(W - padR, medianY);
-  ctx.stroke();
-  ctx.restore();
-
-  // Y-axis ticks on the left
-  ctx.textAlign = 'right';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${Math.round(maxSpeed)} ${isMph ? 'mph' : 'km/h'}`, padL - 10, getY(maxSpeed) + 4);
-  ctx.fillStyle = '#facc15';
-  ctx.fillText(`${medianSpeed.toFixed(1)} ${isMph ? 'mph' : 'km/h'}`, padL - 10, medianY + 4);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${Math.round(minSpeed)} ${isMph ? 'mph' : 'km/h'}`, padL - 10, getY(minSpeed) + 4);
-
-  // Connecting Line
-  ctx.save();
-  ctx.strokeStyle = '#2563eb';
-  ctx.lineWidth = 2.6;
-  ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.speed);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.restore();
-
-  // Points
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.speed);
-
-    ctx.fillStyle = '#1d4ed8';
+    // Yellow Dashed Line for Median
+    const medianY = getY(medianSpeed);
+    ctx.save();
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.moveTo(padL, medianY);
+    ctx.lineTo(W - padR, medianY);
     ctx.stroke();
-  });
+    ctx.restore();
+
+    // Median Callout Badge (centered around middle deliveries)
+    const badgeX = padL + plotW * 0.48;
+    const badgeW = 94;
+    const badgeH = 20;
+    ctx.save();
+    ctx.fillStyle = '#0E1524';
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH, 4);
+    } else {
+      ctx.rect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FCD34D';
+    ctx.font = '700 10.5px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Avg ${medianSpeed.toFixed(1)} ${isMph ? 'mph' : 'km/h'}`, badgeX, medianY);
+    ctx.restore();
+
+    // Connecting Speed Line
+    ctx.save();
+    ctx.strokeStyle = '#2685F5';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.speed);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // Points
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.speed);
+      const isHovered = (hoveredIdx === i);
+
+      if (isHovered) {
+        // Vertical dashed tracking line
+        ctx.save();
+        ctx.strokeStyle = 'rgba(38, 133, 245, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.restore();
+
+        // Outer glow
+        ctx.fillStyle = 'rgba(38, 133, 245, 0.35)';
+        ctx.beginPath();
+        ctx.arc(x, y, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(x, y, isHovered ? 5.5 : 4.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#2685F5';
+      ctx.lineWidth = isHovered ? 2.5 : 2.0;
+      ctx.stroke();
+    });
+  }
+
+  render();
+
+  // Hover Events & Floating Tooltip
+  const tooltip = document.getElementById('speed-chart-tooltip');
+  if (!canvas._speedEventsBound) {
+    canvas._speedEventsBound = true;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+
+      let closestIdx = -1;
+      let minDiff = 25;
+      data.forEach((d, i) => {
+        const x = getX(i);
+        const diff = Math.abs(x - mouseX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      });
+
+      if (closestIdx !== -1) {
+        canvas.style.cursor = 'pointer';
+        render(closestIdx);
+        if (tooltip) {
+          const d = data[closestIdx];
+          tooltip.innerHTML = `
+            <div class="bct-title">DELIVERY ${d.index}</div>
+            <div class="bct-value" style="color: #60A5FA;">${d.speed} <span style="font-size:0.75rem;">${isMph ? 'mph' : 'km/h'}</span></div>
+          `;
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          tooltip.style.left = `${Math.min(rect.width - 120, Math.max(8, offsetX + 12))}px`;
+          tooltip.style.top = `${Math.min(rect.height - 50, Math.max(8, offsetY - 42))}px`;
+          tooltip.classList.add('visible');
+        }
+      } else {
+        canvas.style.cursor = 'crosshair';
+        render(-1);
+        if (tooltip) tooltip.classList.remove('visible');
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      canvas.style.cursor = 'crosshair';
+      render(-1);
+      if (tooltip) tooltip.classList.remove('visible');
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      let closestIdx = -1;
+      let minDiff = 25;
+      data.forEach((d, i) => {
+        const diff = Math.abs(getX(i) - mouseX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      });
+      if (closestIdx !== -1) {
+        switchTeamAnalysisTab('deliveries');
+      }
+    });
+  }
 }
 
 function drawTeamBowlingSpinChart(canvasId, deliveries) {
@@ -13338,19 +13471,10 @@ function drawTeamBowlingSpinChart(canvasId, deliveries) {
   const W = canvas.width;
   const H = canvas.height;
 
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#091222';
-  ctx.fillRect(0, 0, W, H);
+  const allDelivs = currentTeamAnalysisBundle?.all_deliveries || deliveries || [];
+  const sourceDelivs = (deliveries && deliveries.length > 0) ? deliveries : allDelivs;
 
-  if (!deliveries || deliveries.length === 0) {
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 14px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No spin tracking data in active selection', W / 2, H / 2);
-    return;
-  }
-
-  const data = deliveries.map((d, i) => {
+  const data = sourceDelivs.map((d, i) => {
     const val = d.spin_deg !== undefined ? d.spin_deg : (2.0 + (i * 1.3) % 6.8);
     let dir = 'No movement';
     const lat = (d.lateral_line || '').toLowerCase();
@@ -13363,6 +13487,7 @@ function drawTeamBowlingSpinChart(canvasId, deliveries) {
     }
     return {
       index: i + 1,
+      ballNumber: d.ball_number || i + 1,
       spin: parseFloat(val.toFixed(1)),
       direction: dir,
       rawDelivery: d
@@ -13370,110 +13495,231 @@ function drawTeamBowlingSpinChart(canvasId, deliveries) {
   });
 
   const spins = data.map(d => d.spin);
-  const minSpin = Math.min(...spins);
-  const maxSpin = Math.max(...spins);
+  const minSpin = spins.length > 0 ? Math.min(...spins) : 1.8;
+  const maxSpin = spins.length > 0 ? Math.max(...spins) : 8.8;
   const sorted = [...spins].sort((a, b) => a - b);
-  const medianSpin = sorted[Math.floor(sorted.length / 2)];
+  const medianSpin = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 5.3;
 
-  const padL = 75;
+  const padL = 72;
   const padR = 40;
-  const padT = 30;
-  const padB = 40;
+  const padT = 32;
+  const padB = 42;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const yMin = 0;
-  const yMax = Math.max(10, Math.ceil(maxSpin * 1.15));
-  const yRange = (yMax - yMin) || 1;
+  const yMin = 0.0;
+  const yMax = 10.0;
+  const yRange = 10.0;
 
   const getX = (idx) => padL + (idx / Math.max(1, data.length - 1)) * plotW;
   const getY = (val) => padT + plotH - ((val - yMin) / yRange) * plotH;
 
-  // Grid
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const yVal = yMin + (yRange / 4) * i;
-    const yPos = getY(yVal);
-    ctx.beginPath();
-    ctx.moveTo(padL, yPos);
-    ctx.lineTo(W - padR, yPos);
-    ctx.stroke();
-  }
+  function render(hoveredIdx = -1) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#080E1A';
+    ctx.fillRect(0, 0, W, H);
 
-  const stepX = data.length > 20 ? 5 : (data.length > 10 ? 2 : 1);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  data.forEach((d, i) => {
-    if (d.index === 1 || d.index % stepX === 0 || d.index === data.length) {
-      const xPos = getX(i);
+    if (data.length === 0) {
+      ctx.fillStyle = '#64748B';
+      ctx.font = '600 14px Outfit, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No spin tracking data in active selection', W / 2, H / 2);
+      return;
+    }
+
+    // Grid Lines & Y-axis labels (10.0, 7.5, 5.0, 2.5, 0.0 matching screenshot)
+    const ySteps = 4;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    ctx.font = '600 11px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#94A3B8';
+
+    for (let i = 0; i <= ySteps; i++) {
+      const yVal = yMin + (yRange / ySteps) * i;
+      const yPos = getY(yVal);
       ctx.beginPath();
-      ctx.moveTo(xPos, padT);
-      ctx.lineTo(xPos, padT + plotH);
+      ctx.moveTo(padL, yPos);
+      ctx.lineTo(W - padR, yPos);
+      ctx.stroke();
+
+      ctx.fillText(`${yVal.toFixed(1)}`, padL - 12, yPos + 4);
+    }
+
+    // Vertical Y-Axis Title
+    ctx.save();
+    ctx.translate(18, padT + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Spin (°)', 0, 0);
+    ctx.restore();
+
+    // Delivery numbers on X-axis
+    ctx.font = '600 10.5px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'center';
+    data.forEach((d, i) => {
+      const xPos = getX(i);
+      ctx.fillStyle = (hoveredIdx === i) ? '#F4F5F8' : '#64748B';
+      ctx.beginPath();
+      ctx.moveTo(xPos, padT + plotH);
+      ctx.lineTo(xPos, padT + plotH + 4);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.stroke();
       ctx.fillText(`${d.index}`, xPos, padT + plotH + 18);
-    }
-  });
+    });
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 12px system-ui, sans-serif';
-  ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
+    // X-Axis Title
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
 
-  // Yellow Dashed Line for Median
-  const medianY = getY(medianSpin);
-  ctx.save();
-  ctx.strokeStyle = '#facc15';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 4]);
-  ctx.beginPath();
-  ctx.moveTo(padL, medianY);
-  ctx.lineTo(W - padR, medianY);
-  ctx.stroke();
-  ctx.restore();
-
-  // Y-axis labels
-  ctx.textAlign = 'right';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${maxSpin.toFixed(1)}°`, padL - 10, getY(maxSpin) + 4);
-  ctx.fillStyle = '#facc15';
-  ctx.fillText(`${medianSpin.toFixed(1)}°`, padL - 10, medianY + 4);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${minSpin.toFixed(1)}°`, padL - 10, getY(minSpin) + 4);
-
-  // Connecting Line
-  ctx.save();
-  ctx.strokeStyle = '#a855f7';
-  ctx.lineWidth = 2.4;
-  ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.spin);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.restore();
-
-  // Points with direction colors
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.spin);
-
-    let dotColor = '#94a3b8';
-    if (d.direction === 'Right spin') dotColor = '#10b981';
-    else if (d.direction === 'Left spin') dotColor = '#ef4444';
-
-    ctx.fillStyle = dotColor;
+    // Yellow Dashed Line for Median
+    const medianY = getY(medianSpin);
+    ctx.save();
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.arc(x, y, 4.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.8;
+    ctx.moveTo(padL, medianY);
+    ctx.lineTo(W - padR, medianY);
     ctx.stroke();
-  });
+    ctx.restore();
+
+    // Median Callout Badge
+    const badgeX = padL + plotW * 0.30;
+    const badgeW = 76;
+    const badgeH = 20;
+    ctx.save();
+    ctx.fillStyle = '#0E1524';
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH, 4);
+    } else {
+      ctx.rect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FCD34D';
+    ctx.font = '700 10.5px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Avg ${medianSpin.toFixed(1)}°`, badgeX, medianY);
+    ctx.restore();
+
+    // Connecting Spin Line (Purple)
+    ctx.save();
+    ctx.strokeStyle = '#A855F7';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.spin);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // Points with direction colors (Right: green, Left: red, No movement: grey)
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.spin);
+      const isHovered = (hoveredIdx === i);
+
+      let dotColor = '#94A3B8';
+      if (d.direction === 'Right spin') dotColor = '#00C58A';
+      else if (d.direction === 'Left spin') dotColor = '#F00035';
+
+      if (isHovered) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.35)';
+        ctx.beginPath();
+        ctx.arc(x, y, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = dotColor;
+      ctx.beginPath();
+      ctx.arc(x, y, isHovered ? 5.5 : 4.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = isHovered ? 2.2 : 1.8;
+      ctx.stroke();
+    });
+  }
+
+  render();
+
+  const tooltip = document.getElementById('spin-chart-tooltip');
+  if (!canvas._spinEventsBound) {
+    canvas._spinEventsBound = true;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+
+      let closestIdx = -1;
+      let minDiff = 25;
+      data.forEach((d, i) => {
+        const diff = Math.abs(getX(i) - mouseX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      });
+
+      if (closestIdx !== -1) {
+        canvas.style.cursor = 'pointer';
+        render(closestIdx);
+        if (tooltip) {
+          const d = data[closestIdx];
+          const dirColor = d.direction === 'Right spin' ? '#00C58A' : (d.direction === 'Left spin' ? '#F00035' : '#94A3B8');
+          tooltip.innerHTML = `
+            <div class="bct-title">DELIVERY ${d.index}</div>
+            <div class="bct-value" style="color: #C084FC;">${d.spin}°</div>
+            <div class="bct-dir">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dirColor};"></span>
+              <span>${d.direction}</span>
+            </div>
+          `;
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          tooltip.style.left = `${Math.min(rect.width - 120, Math.max(8, offsetX + 12))}px`;
+          tooltip.style.top = `${Math.min(rect.height - 58, Math.max(8, offsetY - 48))}px`;
+          tooltip.classList.add('visible');
+        }
+      } else {
+        canvas.style.cursor = 'crosshair';
+        render(-1);
+        if (tooltip) tooltip.classList.remove('visible');
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      canvas.style.cursor = 'crosshair';
+      render(-1);
+      if (tooltip) tooltip.classList.remove('visible');
+    });
+
+    canvas.addEventListener('click', (e) => {
+      switchTeamAnalysisTab('deliveries');
+    });
+  }
 }
 
 function drawTeamBowlingSwingChart(canvasId, deliveries) {
@@ -13483,19 +13729,10 @@ function drawTeamBowlingSwingChart(canvasId, deliveries) {
   const W = canvas.width;
   const H = canvas.height;
 
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#091222';
-  ctx.fillRect(0, 0, W, H);
+  const allDelivs = currentTeamAnalysisBundle?.all_deliveries || deliveries || [];
+  const sourceDelivs = (deliveries && deliveries.length > 0) ? deliveries : allDelivs;
 
-  if (!deliveries || deliveries.length === 0) {
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 14px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No swing tracking data in active selection', W / 2, H / 2);
-    return;
-  }
-
-  const data = deliveries.map((d, i) => {
+  const data = sourceDelivs.map((d, i) => {
     const val = d.swing_sf !== undefined ? d.swing_sf : (0.2 + (i * 0.27) % 1.5);
     let dir = 'No movement';
     const lat = (d.lateral_line || '').toLowerCase();
@@ -13508,6 +13745,7 @@ function drawTeamBowlingSwingChart(canvasId, deliveries) {
     }
     return {
       index: i + 1,
+      ballNumber: d.ball_number || i + 1,
       swing: parseFloat(val.toFixed(2)),
       direction: dir,
       rawDelivery: d
@@ -13515,121 +13753,243 @@ function drawTeamBowlingSwingChart(canvasId, deliveries) {
   });
 
   const swings = data.map(d => d.swing);
-  const minSwing = Math.min(...swings);
-  const maxSwing = Math.max(...swings);
+  const minSwing = swings.length > 0 ? Math.min(...swings) : 0.1;
+  const maxSwing = swings.length > 0 ? Math.max(...swings) : 1.5;
   const sorted = [...swings].sort((a, b) => a - b);
-  const medianSwing = sorted[Math.floor(sorted.length / 2)];
+  const medianSwing = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 0.9;
 
-  const padL = 75;
+  const padL = 72;
   const padR = 40;
-  const padT = 30;
-  const padB = 40;
+  const padT = 32;
+  const padB = 42;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const yMin = 0;
-  const yMax = Math.max(2.0, Math.ceil(maxSwing * 1.2 * 10) / 10);
-  const yRange = (yMax - yMin) || 1;
+  const yMin = 0.0;
+  const yMax = 2.0;
+  const yRange = 2.0;
 
   const getX = (idx) => padL + (idx / Math.max(1, data.length - 1)) * plotW;
   const getY = (val) => padT + plotH - ((val - yMin) / yRange) * plotH;
 
-  // Grid
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const yVal = yMin + (yRange / 4) * i;
-    const yPos = getY(yVal);
-    ctx.beginPath();
-    ctx.moveTo(padL, yPos);
-    ctx.lineTo(W - padR, yPos);
-    ctx.stroke();
-  }
+  function render(hoveredIdx = -1) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#080E1A';
+    ctx.fillRect(0, 0, W, H);
 
-  const stepX = data.length > 20 ? 5 : (data.length > 10 ? 2 : 1);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  data.forEach((d, i) => {
-    if (d.index === 1 || d.index % stepX === 0 || d.index === data.length) {
-      const xPos = getX(i);
+    if (data.length === 0) {
+      ctx.fillStyle = '#64748B';
+      ctx.font = '600 14px Outfit, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No swing tracking data in active selection', W / 2, H / 2);
+      return;
+    }
+
+    // Grid Lines & Y-axis labels (2.0, 1.5, 1.0, 0.5, 0.0)
+    const ySteps = 4;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    ctx.font = '600 11px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#94A3B8';
+
+    for (let i = 0; i <= ySteps; i++) {
+      const yVal = yMin + (yRange / ySteps) * i;
+      const yPos = getY(yVal);
       ctx.beginPath();
-      ctx.moveTo(xPos, padT);
-      ctx.lineTo(xPos, padT + plotH);
+      ctx.moveTo(padL, yPos);
+      ctx.lineTo(W - padR, yPos);
+      ctx.stroke();
+
+      ctx.fillText(`${yVal.toFixed(1)}`, padL - 12, yPos + 4);
+    }
+
+    // Vertical Y-Axis Title
+    ctx.save();
+    ctx.translate(18, padT + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Swing Force (SF)', 0, 0);
+    ctx.restore();
+
+    // Delivery numbers on X-axis
+    ctx.font = '600 10.5px JetBrains Mono, monospace, sans-serif';
+    ctx.textAlign = 'center';
+    data.forEach((d, i) => {
+      const xPos = getX(i);
+      ctx.fillStyle = (hoveredIdx === i) ? '#F4F5F8' : '#64748B';
+      ctx.beginPath();
+      ctx.moveTo(xPos, padT + plotH);
+      ctx.lineTo(xPos, padT + plotH + 4);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.stroke();
       ctx.fillText(`${d.index}`, xPos, padT + plotH + 18);
-    }
-  });
+    });
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 12px system-ui, sans-serif';
-  ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
+    // X-Axis Title
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 11px Outfit, system-ui, sans-serif';
+    ctx.fillText('Delivery Number', padL + plotW / 2, H - 10);
 
-  // Y Axis Label
-  ctx.save();
-  ctx.translate(18, padT + plotH / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 11px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Swing Force (SF)', 0, 0);
-  ctx.restore();
-
-  // Yellow Dashed Line for Median
-  const medianY = getY(medianSwing);
-  ctx.save();
-  ctx.strokeStyle = '#facc15';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 4]);
-  ctx.beginPath();
-  ctx.moveTo(padL, medianY);
-  ctx.lineTo(W - padR, medianY);
-  ctx.stroke();
-  ctx.restore();
-
-  // Y-axis labels
-  ctx.textAlign = 'right';
-  ctx.font = '600 11px system-ui, sans-serif';
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${maxSwing.toFixed(1)} SF`, padL - 10, getY(maxSwing) + 4);
-  ctx.fillStyle = '#facc15';
-  ctx.fillText(`${medianSwing.toFixed(1)} SF`, padL - 10, medianY + 4);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`${minSwing.toFixed(1)} SF`, padL - 10, getY(minSwing) + 4);
-
-  // Connecting Line
-  ctx.save();
-  ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 2.4;
-  ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.swing);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.restore();
-
-  // Points with direction colors
-  data.forEach((d, i) => {
-    const x = getX(i);
-    const y = getY(d.swing);
-
-    let dotColor = '#94a3b8';
-    if (d.direction === 'Right swing') dotColor = '#1e3a5f';
-    else if (d.direction === 'Left swing') dotColor = '#f59e0b';
-
-    ctx.fillStyle = dotColor;
+    // Yellow Dashed Line for Median
+    const medianY = getY(medianSwing);
+    ctx.save();
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.arc(x, y, 4.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = dotColor === '#1e3a5f' ? '#3b82f6' : '#ffffff';
-    ctx.lineWidth = 1.8;
+    ctx.moveTo(padL, medianY);
+    ctx.lineTo(W - padR, medianY);
     ctx.stroke();
-  });
+    ctx.restore();
+
+    // Median Callout Badge
+    const badgeX = padL + plotW * 0.50;
+    const badgeW = 76;
+    const badgeH = 20;
+    ctx.save();
+    ctx.fillStyle = '#0E1524';
+    ctx.strokeStyle = '#EAB308';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH, 4);
+    } else {
+      ctx.rect(badgeX - badgeW / 2, medianY - badgeH / 2, badgeW, badgeH);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FCD34D';
+    ctx.font = '700 10.5px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Avg ${medianSwing.toFixed(1)} SF`, badgeX, medianY);
+    ctx.restore();
+
+    // Connecting Swing Line (Amber)
+    ctx.save();
+    ctx.strokeStyle = '#FFAB00';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.swing);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // Points with direction colors (Right: Blue, Left: Orange, No movement: Grey)
+    data.forEach((d, i) => {
+      const x = getX(i);
+      const y = getY(d.swing);
+      const isHovered = (hoveredIdx === i);
+
+      let dotColor = '#94A3B8';
+      if (d.direction === 'Right swing') dotColor = '#2685F5';
+      else if (d.direction === 'Left swing') dotColor = '#FF6B00';
+
+      if (isHovered) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 171, 0, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(255, 171, 0, 0.35)';
+        ctx.beginPath();
+        ctx.arc(x, y, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = dotColor;
+      ctx.beginPath();
+      ctx.arc(x, y, isHovered ? 5.5 : 4.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = isHovered ? 2.2 : 1.8;
+      ctx.stroke();
+    });
+  }
+
+  render();
+
+  const tooltip = document.getElementById('swing-chart-tooltip');
+  if (!canvas._swingEventsBound) {
+    canvas._swingEventsBound = true;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+
+      let closestIdx = -1;
+      let minDiff = 25;
+      data.forEach((d, i) => {
+        const diff = Math.abs(getX(i) - mouseX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      });
+
+      if (closestIdx !== -1) {
+        canvas.style.cursor = 'pointer';
+        render(closestIdx);
+        if (tooltip) {
+          const d = data[closestIdx];
+          const dirColor = d.direction === 'Right swing' ? '#2685F5' : (d.direction === 'Left swing' ? '#FF6B00' : '#94A3B8');
+          tooltip.innerHTML = `
+            <div class="bct-title">DELIVERY ${d.index}</div>
+            <div class="bct-value" style="color: #FB923C;">${d.swing} <span style="font-size:0.75rem;">SF</span></div>
+            <div class="bct-dir">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dirColor};"></span>
+              <span>${d.direction}</span>
+            </div>
+          `;
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          tooltip.style.left = `${Math.min(rect.width - 120, Math.max(8, offsetX + 12))}px`;
+          tooltip.style.top = `${Math.min(rect.height - 58, Math.max(8, offsetY - 48))}px`;
+          tooltip.classList.add('visible');
+        }
+      } else {
+        canvas.style.cursor = 'crosshair';
+        render(-1);
+        if (tooltip) tooltip.classList.remove('visible');
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      canvas.style.cursor = 'crosshair';
+      render(-1);
+      if (tooltip) tooltip.classList.remove('visible');
+    });
+
+    canvas.addEventListener('click', (e) => {
+      switchTeamAnalysisTab('deliveries');
+    });
+  }
 }
+
+function toggleSpeedUnitDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('speed-unit-menu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', () => {
+  const menu = document.getElementById('speed-unit-menu');
+  if (menu) menu.classList.add('hidden');
+});
 
 function openSwingForceModal() {
   const modal = document.getElementById('modal-swing-force-info');
