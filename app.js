@@ -9067,7 +9067,7 @@ function renderPlayerSessionsGrid(sessions) {
     let videoPreviewHtml = '';
     if (videoStatus === 'Video Available' || s.sample_video_url) {
       videoPreviewHtml = `
-        <div class="sc-video-box">
+        <div class="sc-video-box" onclick="previewSessionVideo('${s.id}', event)" style="cursor:pointer;" title="Play Session Video">
           <img src="${thumbUrl}" alt="${escapeHtml(s.name)}" class="sc-thumbnail-img" onerror="this.onerror=null;this.src='/static/images/coastal_warriors_tiger.jpg';" />
           <button type="button" class="sc-play-btn" onclick="previewSessionVideo('${s.id}', event)" title="Play Session Video">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
@@ -9556,27 +9556,40 @@ function previewSessionVideo(sessionId, event) {
   if (subtitle) subtitle.textContent = `${session.session_type || 'Net Practice'} • ${session.venue || 'SS Net'} • ${session.session_code || '#SS-001'}`;
   if (footerInfo) footerInfo.textContent = `Recorded on ${session.created_at || 'Recent'} • Duration: ${session.video_duration || 'N/A'}`;
 
-  const videoUrl = session.sample_video_url;
-  if (videoUrl && player) {
-    player.src = videoUrl;
+  // Gather all valid delivery videos
+  const deliveryClips = (session.deliveries || []).filter(d => d.video_url);
+  const initialVideoUrl = deliveryClips[0]?.video_url || session.sample_video_url;
+
+  if (initialVideoUrl && player) {
+    player.src = initialVideoUrl;
+    player.load();
     player.classList.remove('hidden');
     if (emptyState) emptyState.classList.add('hidden');
-    player.play().catch(() => {});
+    
+    // Play with graceful muted fallback if browser blocks unmuted autoplay
+    const playPromise = player.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Playback with sound prevented by browser; retrying muted:', err);
+        player.muted = true;
+        player.play().catch(e => console.warn('Muted autoplay also blocked:', e));
+      });
+    }
   } else {
     if (player) {
       player.pause();
+      player.src = '';
       player.classList.add('hidden');
     }
     if (emptyState) emptyState.classList.remove('hidden');
   }
 
-  // Clips switcher if multiple clips
+  // Clips switcher if multiple deliveries
   if (clipsList) {
-    const clipsCount = session.video_clips_count || 1;
-    if (clipsCount > 1 && videoUrl) {
-      clipsList.innerHTML = Array.from({ length: clipsCount }, (_, i) => `
-        <button type="button" class="ps-clip-chip ${i === 0 ? 'active' : ''}" onclick="switchSessionVideoClip('${videoUrl}', ${i + 1}, this)">
-          Clip ${i + 1}
+    if (deliveryClips.length > 1) {
+      clipsList.innerHTML = deliveryClips.map((d, i) => `
+        <button type="button" class="ps-clip-chip ${i === 0 ? 'active' : ''}" onclick="switchSessionVideoClip('${d.video_url}', ${d.ball_number || (i + 1)}, this)">
+          Ball ${d.ball_number || (i + 1)} • ${d.speed_mph ? d.speed_mph + ' mph' : ''} ${d.length_zone || ''}
         </button>
       `).join('');
     } else {
@@ -9587,13 +9600,20 @@ function previewSessionVideo(sessionId, event) {
   if (modal) modal.classList.remove('hidden');
 }
 
-function switchSessionVideoClip(url, clipIndex, btn) {
+function switchSessionVideoClip(url, ballNumber, btn) {
   document.querySelectorAll('.ps-clip-chip').forEach(c => c.classList.remove('active'));
   if (btn) btn.classList.add('active');
   const player = document.getElementById('ps-main-video-player');
-  if (player) {
+  if (player && url) {
     player.src = url;
-    player.play().catch(() => {});
+    player.load();
+    const playPromise = player.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        player.muted = true;
+        player.play().catch(() => {});
+      });
+    }
   }
 }
 

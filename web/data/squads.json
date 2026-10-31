@@ -1,0 +1,38 @@
+[
+  {
+    "id": "squad_pace_battery",
+    "team_id": "team_trajecta_squad",
+    "name": "Pace Battery",
+    "category": "Senior Men",
+    "age_group": "Open",
+    "supported_format": "T20 & ODI",
+    "description": "High-velocity pace battery and seam bowling specialists",
+    "coach": "Hitesh Kadam",
+    "status": "Active",
+    "created_at": "29 Oct 2026"
+  },
+  {
+    "id": "squad_spin_attack",
+    "team_id": "team_trajecta_squad",
+    "name": "Spin Attack",
+    "category": "Senior Men",
+    "age_group": "Open",
+    "supported_format": "T20 & Multi-Day",
+    "description": "Turn, drift, and bounce spin bowling unit",
+    "coach": "Anil Kumble (Advisor)",
+    "status": "Active",
+    "created_at": "29 Oct 2026"
+  },
+  {
+    "id": "squad_main_squad",
+    "team_id": "team_trajecta_squad",
+    "name": "Main Squad",
+    "category": "First XI",
+    "age_group": "Senior",
+    "supported_format": "All Formats",
+    "description": "Core matchday playing squad across all formats",
+    "coach": "Sandy (Head Coach)",
+    "status": "Active",
+    "created_at": "29 Oct 2026"
+  }
+]

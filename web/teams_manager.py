@@ -1072,6 +1072,7 @@ def get_player_sessions(player_id: str):
                 "player_id": player_id,
                 "team_id": data.get("team_id") or player.get("team_id"),
                 "bowler_name": data.get("bowler_name") or player["name"],
+                "deliveries": deliveries,
                 "deliveries_count": len(deliveries),
                 "video_clips_count": data.get("video_clips_count") if data.get("video_clips_count") is not None else len([d for d in deliveries if d.get("video_url")]),
                 "avg_speed_mph": avg_speed,
