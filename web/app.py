@@ -19,8 +19,11 @@ from web.sessions_manager import (
     delete_delivery_from_session, get_multiple_sessions, aggregate_multiple_sessions
 )
 from web.teams_manager import (
-    list_teams, get_team, create_team,
-    list_players, get_player, create_player, get_player_sessions
+    list_teams, get_team, create_team, update_team,
+    list_squads, get_squad, create_squad, update_squad, delete_squad,
+    list_players, get_player, create_player, update_player, set_player_status,
+    remove_player_from_team, delete_player, assign_existing_player_to_team,
+    list_all_registered_players, get_player_sessions
 )
 
 # Real-world pitch dimensions in meters (MCC Laws of Cricket)
@@ -1302,6 +1305,60 @@ async def api_get_team(team_id: str):
         raise HTTPException(status_code=404, detail="Team not found")
     return JSONResponse(team)
 
+@app.put("/api/teams/{team_id}")
+async def api_update_team(team_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    team = update_team(team_id, body)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return JSONResponse(team)
+
+# Squads API
+@app.get("/api/teams/{team_id}/squads")
+async def api_list_squads(team_id: str):
+    return JSONResponse(list_squads(team_id))
+
+@app.post("/api/teams/{team_id}/squads")
+async def api_create_squad(team_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    name = body.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Squad name is required")
+    squad = create_squad(
+        team_id=team_id,
+        name=name,
+        category=body.get("category", "Senior Men"),
+        age_group=body.get("age_group", "Open"),
+        supported_format=body.get("supported_format", "All Formats"),
+        description=body.get("description", ""),
+        coach=body.get("coach", ""),
+        status=body.get("status", "Active")
+    )
+    return JSONResponse(squad)
+
+@app.put("/api/teams/{team_id}/squads/{squad_id}")
+async def api_update_squad(team_id: str, squad_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    squad = update_squad(squad_id, body)
+    if not squad:
+        raise HTTPException(status_code=404, detail="Squad not found")
+    return JSONResponse(squad)
+
+@app.delete("/api/teams/{team_id}/squads/{squad_id}")
+async def api_delete_squad(team_id: str, squad_id: str):
+    delete_squad(squad_id)
+    return JSONResponse({"success": True, "message": "Squad deleted successfully"})
+
+# Players API
 @app.get("/api/teams/{team_id}/players")
 async def api_list_team_players(team_id: str):
     players = list_players(team_id=team_id)
@@ -1316,19 +1373,52 @@ async def api_add_team_player(team_id: str, request: Request):
     name = body.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Player name is required")
-    role = body.get("role", "All-rounder")
-    batting = body.get("batting_style", "Right")
-    bowling = body.get("bowling_style", "Right Medium")
-    is_admin = bool(body.get("is_admin", False))
-    player = create_player(
+
+    result = create_player(
         team_id=team_id,
         name=name,
-        role=role,
-        batting_style=batting,
-        bowling_style=bowling,
-        is_admin=is_admin
+        display_name=body.get("display_name", ""),
+        role=body.get("role", "All-rounder"),
+        batting_style=body.get("batting_style", "Right"),
+        bowling_style=body.get("bowling_style", "Right Medium"),
+        bowling_type=body.get("bowling_type", ""),
+        is_wicketkeeper=bool(body.get("is_wicketkeeper", False)),
+        jersey_number=str(body.get("jersey_number", "")),
+        preferred_position=body.get("preferred_position", ""),
+        squad_id=body.get("squad_id", ""),
+        status=body.get("status", "Active"),
+        is_admin=bool(body.get("is_admin", False)),
+        is_captain=bool(body.get("is_captain", False)),
+        is_vice_captain=bool(body.get("is_vice_captain", False)),
+        dob=body.get("dob", ""),
+        gender=body.get("gender", "Male"),
+        contact=body.get("contact", ""),
+        email=body.get("email", ""),
+        city=body.get("city", ""),
+        avatar_url=body.get("avatar_url", "")
     )
+    if isinstance(result, dict) and result.get("error") == "duplicate":
+        return JSONResponse(result, status_code=409)
+    return JSONResponse(result)
+
+@app.post("/api/teams/{team_id}/players/assign-existing")
+async def api_assign_existing_player(team_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    player_id = body.get("player_id", "").strip()
+    squad_id = body.get("squad_id", "").strip()
+    if not player_id:
+        raise HTTPException(status_code=400, detail="player_id is required")
+    player = assign_existing_player_to_team(player_id, team_id, squad_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
     return JSONResponse(player)
+
+@app.get("/api/registered-players")
+async def api_list_registered_players():
+    return JSONResponse(list_all_registered_players())
 
 @app.get("/api/players/{player_id}")
 async def api_get_player(player_id: str):
@@ -1336,6 +1426,52 @@ async def api_get_player(player_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     return JSONResponse(player)
+
+@app.put("/api/players/{player_id}")
+async def api_update_player(player_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    player = update_player(player_id, body)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return JSONResponse(player)
+
+@app.patch("/api/players/{player_id}/status")
+async def api_set_player_status(player_id: str, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    status = body.get("status", "Active")
+    player = set_player_status(player_id, status)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return JSONResponse(player)
+
+@app.delete("/api/teams/{team_id}/players/{player_id}")
+async def api_remove_player_from_team(team_id: str, player_id: str):
+    success = remove_player_from_team(team_id, player_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Player not found in team")
+    return JSONResponse({"success": True, "message": "Player removed from team successfully"})
+
+@app.post("/api/upload-avatar")
+async def api_upload_avatar(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+    ext = os.path.splitext(file.filename)[1].lower() or ".jpg"
+    filename = f"avatar_{int(time.time())}_{os.urandom(3).hex()}{ext}"
+    out_dir = os.path.join(BASE_DIR, "static", "images", "avatars")
+    os.makedirs(out_dir, exist_ok=True)
+    fpath = os.path.join(out_dir, filename)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image must be under 5MB")
+    with open(fpath, "wb") as f:
+        f.write(contents)
+    return JSONResponse({"avatar_url": f"/static/images/avatars/{filename}"})
 
 @app.get("/api/players/{player_id}/sessions")
 async def api_get_player_sessions(player_id: str):

@@ -1,12 +1,21 @@
 [
   {
     "id": "team_trajecta_squad",
-    "name": "TRAJECTA Squad",
-    "code": "TRJ",
+    "name": "Coastal Warriors",
+    "code": "CW",
     "created_at": "29 Oct 2026",
     "created_ts": 1793232000,
     "description": "Trajecta AI High Performance Bowling Squad",
-    "cover_color": "linear-gradient(135deg, #0e1e38 0%, #071120 100%)"
+    "cover_color": "linear-gradient(135deg, #0e1e38 0%, #071120 100%)",
+    "category": "Senior Men's Team",
+    "location": "Kakinada, AP",
+    "status": "Active",
+    "formats": [
+      "T20",
+      "ODI",
+      "Practice"
+    ],
+    "logo_url": "/static/images/coastal_warriors_tiger.jpg"
   },
   {
     "id": "team_stumps_xi",
