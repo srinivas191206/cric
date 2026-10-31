@@ -867,49 +867,125 @@
         <!-- ========================================================
              FULLTRACK AI WORKFLOW VIEW 4: TEAM PLAYER DELIVERIES ANALYSIS
         ======================================================== -->
+        <!-- ========================================================
+             FULLTRACK AI WORKFLOW VIEW 4: TEAM PLAYER DELIVERIES ANALYSIS
+        ======================================================== -->
         <section id="view-team-analysis" class="dashboard-view-panel hidden">
-          <!-- Back button -->
-          <div class="team-analysis-back-row">
-            <button type="button" class="btn-nav-back" onclick="switchDashboardView('player-sessions')" title="Back to Sessions Selector">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            </button>
+          <!-- Compact Player Information Banner -->
+          <div class="team-analysis-header-card" id="team-analysis-header-card">
+            <div class="pib-left">
+              <button type="button" class="btn-pib-back" onclick="switchDashboardView('player-sessions')" title="Back to Sessions Selector" id="btn-tah-back" aria-label="Back to Sessions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+              <div class="pib-avatar-wrap">
+                <div class="pib-avatar" id="tab-player-avatar">SS</div>
+              </div>
+              <div class="pib-details">
+                <div class="pib-name-row">
+                  <h1 class="pib-player-name" id="tab-player-title">SS</h1>
+                  <span class="pib-session-badge" id="tab-analysis-subtitle">ANALYSIS (9 SESSIONS)</span>
+                </div>
+                <div class="pib-meta-line" id="tab-player-meta">
+                  <span id="tab-team-title">COASTAL WARRIORS</span>
+                  <span class="pib-meta-sep">•</span>
+                  <span id="tab-squad-title">Pace Battery</span>
+                  <span class="pib-meta-sep">•</span>
+                  <span id="tab-player-role">Fast Bowler</span>
+                  <span class="pib-meta-sep">•</span>
+                  <span id="tab-batting-style">Right-hand Bat</span>
+                  <span class="pib-meta-sep">•</span>
+                  <span id="tab-bowling-style">Right-arm Fast</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Analysis Blue Header Card (Screenshots 2 & 3) -->
-          <div class="team-analysis-banner-card">
-            <div class="tab-left">
-              <span class="tab-team-name" id="tab-team-title">TRAJECTA SQUAD</span>
-              <h1 class="tab-player-name" id="tab-player-title">ss</h1>
-              <div class="tab-analysis-subtitle" id="tab-analysis-subtitle">ANALYSIS (2 SESSIONS)</div>
-            </div>
-            <div class="tab-right">
-              <div class="tab-initials-badge" id="tab-player-avatar">SS</div>
-            </div>
-          </div>
-
-          <!-- Filter & Action Toolbar (Screenshots 2 & 3) -->
-          <div class="team-analysis-toolbar">
+          <!-- Analysis Control Toolbar -->
+          <div class="team-analysis-toolbar" id="team-analysis-toolbar">
+            <!-- Left Group: Analysis Controls -->
             <div class="tat-left">
-              <!-- Player bowling / batting toggle pill -->
-              <div class="tat-role-pill" id="tat-role-pill" onclick="toggleAnalysisRolePill()" title="Toggle Role">
-                <span class="tat-role-dot"></span>
+              <!-- Bowling / Batting context indicator -->
+              <div class="tat-role-pill" id="tat-role-pill" onclick="toggleAnalysisRolePill()" title="Toggle Context Indicator">
+                <span class="tat-role-dot" id="tat-role-dot"></span>
                 <span id="tat-role-label">ss is Bowling</span>
               </div>
 
-              <!-- + Filter Button -->
-              <button type="button" class="tat-btn-filter" id="tat-btn-filter" onclick="openDeliveriesFilterModal()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                <span>+ Filter</span>
-                <span class="tat-filter-badge hidden" id="tat-filter-badge">0</span>
-              </button>
+              <!-- Filter Button & Anchored Popover -->
+              <div class="tat-filter-anchor" id="tat-filter-anchor">
+                <button type="button" class="tat-btn-filter" id="tat-btn-filter" onclick="toggleDeliveriesFilterPopover()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                  <span>+ Filter</span>
+                  <span class="tat-filter-badge hidden" id="tat-filter-badge">0</span>
+                </button>
 
-              <!-- Unit toggle pill (km/h | mph) -->
+                <!-- Filter Popover -->
+                <div class="tat-filter-popover hidden" id="tat-filter-popover">
+                  <div class="tfp-header">
+                    <div class="tfp-title-row">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                      <h4 class="tfp-title">Delivery Filters</h4>
+                    </div>
+                    <button type="button" class="tfp-btn-clear" onclick="resetDeliveriesFilter()">Clear All</button>
+                  </div>
+                  <div class="tfp-body">
+                    <!-- Bowling Length -->
+                    <div class="tfp-group">
+                      <label class="tfp-label">Pitch Length Zone</label>
+                      <div class="tfp-chips" id="tfp-chips-length">
+                        <button type="button" class="dfm-chip active" data-filter="length" data-value="all" onclick="selectFilterChip(this)">All</button>
+                        <button type="button" class="dfm-chip" data-filter="length" data-value="yorker" onclick="selectFilterChip(this)">Yorker</button>
+                        <button type="button" class="dfm-chip" data-filter="length" data-value="full" onclick="selectFilterChip(this)">Full</button>
+                        <button type="button" class="dfm-chip" data-filter="length" data-value="good length" onclick="selectFilterChip(this)">Good Length</button>
+                        <button type="button" class="dfm-chip" data-filter="length" data-value="back of length" onclick="selectFilterChip(this)">Back of Length</button>
+                        <button type="button" class="dfm-chip" data-filter="length" data-value="short" onclick="selectFilterChip(this)">Short</button>
+                      </div>
+                    </div>
+                    <!-- Bowling Line -->
+                    <div class="tfp-group">
+                      <label class="tfp-label">Lateral Line</label>
+                      <div class="tfp-chips" id="tfp-chips-line">
+                        <button type="button" class="dfm-chip active" data-filter="line" data-value="all" onclick="selectFilterChip(this)">All</button>
+                        <button type="button" class="dfm-chip" data-filter="line" data-value="outside off" onclick="selectFilterChip(this)">Outside Off</button>
+                        <button type="button" class="dfm-chip" data-filter="line" data-value="off stump" onclick="selectFilterChip(this)">Off Stump</button>
+                        <button type="button" class="dfm-chip" data-filter="line" data-value="middle" onclick="selectFilterChip(this)">Middle Stump</button>
+                        <button type="button" class="dfm-chip" data-filter="line" data-value="leg" onclick="selectFilterChip(this)">Leg Stump</button>
+                        <button type="button" class="dfm-chip" data-filter="line" data-value="down leg" onclick="selectFilterChip(this)">Down Leg</button>
+                      </div>
+                    </div>
+                    <!-- Speed Range -->
+                    <div class="tfp-group">
+                      <label class="tfp-label">Bowling Speed</label>
+                      <div class="tfp-chips" id="tfp-chips-speed">
+                        <button type="button" class="dfm-chip active" data-filter="speed" data-value="all" onclick="selectFilterChip(this)">All</button>
+                        <button type="button" class="dfm-chip" data-filter="speed" data-value="fast" onclick="selectFilterChip(this)">Fast (90+ mph)</button>
+                        <button type="button" class="dfm-chip" data-filter="speed" data-value="medium" onclick="selectFilterChip(this)">Medium (80-90)</button>
+                        <button type="button" class="dfm-chip" data-filter="speed" data-value="slow" onclick="selectFilterChip(this)">Slow (&lt;80 mph)</button>
+                      </div>
+                    </div>
+                    <!-- Batter Stance / Hand -->
+                    <div class="tfp-group">
+                      <label class="tfp-label">Batter Hand</label>
+                      <div class="tfp-chips" id="tfp-chips-hand">
+                        <button type="button" class="dfm-chip active" data-filter="hand" data-value="all" onclick="selectFilterChip(this)">All</button>
+                        <button type="button" class="dfm-chip" data-filter="hand" data-value="right" onclick="selectFilterChip(this)">Right Hand</button>
+                        <button type="button" class="dfm-chip" data-filter="hand" data-value="left" onclick="selectFilterChip(this)">Left Hand</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tfp-footer">
+                    <button type="button" class="tfp-btn-apply" onclick="applyDeliveriesFilter()">Apply Filters</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Speed unit selector (km/h | mph) -->
               <div class="tat-unit-toggle" id="tat-unit-toggle">
                 <button type="button" class="tat-unit-btn" id="tat-unit-kph" onclick="setTeamAnalysisSpeedUnit('kph')">km/h</button>
                 <button type="button" class="tat-unit-btn active" id="tat-unit-mph" onclick="setTeamAnalysisSpeedUnit('mph')">mph</button>
               </div>
             </div>
 
+            <!-- Right Group: Report and View Controls -->
             <div class="tat-right">
               <!-- Mode Tabs: Deliveries | Graphs -->
               <div class="tat-view-tabs">
@@ -923,20 +999,23 @@
                 </button>
               </div>
 
-              <!-- Reports Action Group with status (Screenshot 1) -->
+              <!-- Reports Action Group with status -->
               <div class="tat-reports-group">
-                <div class="tat-reports-hint">1 saved report on file for this player. <a href="javascript:void(0)" onclick="openPreviousReportsModal()">Open Previous reports</a></div>
+                <div class="tat-reports-hint" id="tat-reports-hint">
+                  <span id="tat-reports-hint-count">1 saved report</span> on file for this player. 
+                  <a href="javascript:void(0)" onclick="openPreviousReportsModal()">Open Previous reports</a>
+                </div>
                 <div class="tat-reports-btn-row">
-                  <button type="button" class="tat-btn-secondary" onclick="openPreviousReportsModal()" title="View Past Reports">
+                  <button type="button" class="tat-btn-secondary" id="tat-btn-prev-reports" onclick="openPreviousReportsModal()" title="View Saved Reports">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span>Previous reports</span>
                   </button>
                   <div class="tat-dl-container">
                     <button type="button" class="tat-btn-download" onclick="generateAndDownloadTeamReport()" id="tat-btn-report">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      <span>Download Report</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="tat-btn-report-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span id="tat-btn-report-text">Download Report</span>
                     </button>
-                    <span class="tat-dl-status">Ready to download</span>
+                    <span class="tat-dl-status" id="tat-dl-status">Ready to download</span>
                   </div>
                 </div>
               </div>
@@ -945,7 +1024,7 @@
 
           <!-- Deliveries View Container -->
           <div id="team-analysis-deliveries-view">
-            <!-- Header Summary Row (Screenshot 2: "101 Deliveries, 2 Sessions" & "Side-by-Side Mode") -->
+            <!-- Header Summary Row ("101 Deliveries, 2 Sessions" & "Side-by-Side Mode") -->
             <div class="team-analysis-summary-row">
               <h2 class="tas-title" id="tas-deliveries-summary">0 Deliveries, 0 Sessions</h2>
               <button type="button" class="tas-btn-sidebyside" onclick="toggleSideBySideMode()" id="tas-btn-sidebyside" title="Compare Deliveries Side by Side">
@@ -960,21 +1039,30 @@
             </div>
           </div>
 
-          <!-- Graphs View Container (Alternate Tab - Screenshots 1, 2, 3, 4) -->
+          <!-- Graphs View Container (Alternate Tab) -->
           <div id="team-analysis-graphs-view" class="hidden">
             <!-- Top Performance Graphs Header Row -->
-            <div class="team-graphs-header-row">
-              <h2 class="tgh-title">Performance Graphs</h2>
-              <span class="tgh-count" id="tgh-deliveries-counter">0 deliveries • 0 with tracking data</span>
+            <div class="team-graphs-header-row" id="team-graphs-header-row">
+              <div class="tgh-left">
+                <h2 class="tgh-title" id="tgh-title">Performance Graphs</h2>
+              </div>
+              <div class="tgh-right">
+                <span class="tgh-count" id="tgh-deliveries-counter">0 Deliveries | 0 With Tracking Data</span>
+              </div>
             </div>
 
-            <!-- Active Region Filter Notification Banner (Screenshot 2) -->
+            <!-- Active Applied Filter Notification Banner -->
             <div class="tgraphs-filter-banner hidden" id="tgraphs-region-banner">
               <div class="tfb-content">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                <span id="tgraphs-region-banner-text">Filtered by Region (0 deliveries)</span>
+                <div class="tfb-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </div>
+                <div class="tfb-text-group">
+                  <span class="tfb-label" id="tgraphs-region-banner-text">Filtered by Region</span>
+                  <span class="tfb-subcount" id="tgraphs-banner-counts">0 of 0 deliveries included</span>
+                </div>
               </div>
-              <button type="button" class="tfb-btn-reset" onclick="resetBeehiveRegionFilter()">Reset Filter</button>
+              <button type="button" class="tfb-btn-reset" onclick="resetAllTeamFilters()">Reset Filter</button>
             </div>
 
             <!-- SECTION 1: Performance Visualizations (Pitch Map, Beehive Chart, Release Points) -->
@@ -4297,6 +4385,101 @@
           <button type="submit" class="btn-modal-save" style="background:#00C58A;">Start Recording</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       PREVIOUS REPORTS MODAL (Prompt 3 - Section 10)
+  ======================================================== -->
+  <div class="modal-backdrop hidden" id="modal-previous-reports" onclick="handleReportsModalBackdrop(event)">
+    <div class="modal-card modal-reports-card" role="dialog" aria-modal="true" aria-labelledby="pr-modal-title">
+      <div class="apw-header">
+        <div>
+          <div class="apw-step-badge">TRAJECTA REPORTS ARCHIVE</div>
+          <h3 class="apw-title" id="pr-modal-title">Previous Analysis Reports</h3>
+          <p class="apw-subtitle" id="pr-modal-subtitle">Verified analytical reports saved on file for this athlete.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closePreviousReportsModal()" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Reports Filter & Search Bar -->
+      <div class="pr-toolbar">
+        <div class="pr-search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="pr-search-input" placeholder="Search reports by title, ID, or session..." oninput="onReportsSearchInput(this.value)" />
+        </div>
+        <div class="pr-chips">
+          <button type="button" class="pr-filter-chip active" data-filter="all" onclick="filterReportsList('all', this)">All Reports</button>
+          <button type="button" class="pr-filter-chip" data-filter="verified" onclick="filterReportsList('verified', this)">Verified</button>
+          <button type="button" class="pr-filter-chip" data-filter="recent" onclick="filterReportsList('recent', this)">Recent (7 Days)</button>
+        </div>
+      </div>
+
+      <!-- Reports Content Container -->
+      <div class="pr-content-area" id="pr-content-area">
+        <!-- Loading State -->
+        <div class="pr-state-box hidden" id="pr-loading-state">
+          <div class="pr-spinner"></div>
+          <p class="pr-state-title">Retrieving Saved Reports...</p>
+          <p class="pr-state-sub">Fetching verified telemetry from secure storage.</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="pr-state-box hidden" id="pr-empty-state">
+          <div class="pr-state-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <p class="pr-state-title">No Previous Reports Found</p>
+          <p class="pr-state-sub">No saved reports exist on file for this player yet. Generate your first analytical report using the Download Report button.</p>
+          <button type="button" class="btn-pr-action" onclick="generateReportFromModal()">Generate Report Now</button>
+        </div>
+
+        <!-- Populated Reports Grid -->
+        <div class="pr-reports-grid" id="pr-reports-grid">
+          <!-- Dynamically populated via renderReportsList() -->
+        </div>
+      </div>
+
+      <div class="apw-footer pr-footer">
+        <span class="pr-footer-count" id="pr-footer-count">1 saved report on file</span>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-modal-cancel" onclick="closePreviousReportsModal()">Close</button>
+          <button type="button" class="btn-modal-save" onclick="generateReportFromModal()" style="background:#FFAB00; color:#0B132B;">+ Generate New Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       REPORT DETAILS & PREVIEW MODAL
+  ======================================================== -->
+  <div class="modal-backdrop hidden" id="modal-view-report" onclick="handleViewReportModalBackdrop(event)">
+    <div class="modal-card modal-report-view-card" role="dialog" aria-modal="true" aria-labelledby="vr-modal-title">
+      <div class="apw-header">
+        <div>
+          <div class="apw-step-badge" id="vr-report-id">REP-2026-SS01</div>
+          <h3 class="apw-title" id="vr-modal-title">Player Performance Report Details</h3>
+          <p class="apw-subtitle" id="vr-report-meta">Generated on Oct 29, 2026 • Verified AI Trajectory Telemetry</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeViewReportModal()" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <div class="vr-sheet-body" id="vr-sheet-body">
+        <!-- Dynamically rendered printable report card -->
+      </div>
+
+      <div class="apw-footer vr-footer">
+        <div class="vr-footer-left">
+          <span class="vr-badge-verified">✓ Verified Analytical Telemetry</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-modal-cancel" onclick="closeViewReportModal()">Close</button>
+          <button type="button" class="btn-modal-save" id="btn-vr-download" onclick="downloadCurrentOpenReport()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download Report Data</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

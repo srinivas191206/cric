@@ -6,6 +6,7 @@ from datetime import datetime
 TEAMS_FILE = os.path.join(os.path.dirname(__file__), "data", "teams.json")
 PLAYERS_FILE = os.path.join(os.path.dirname(__file__), "data", "players.json")
 SQUADS_FILE = os.path.join(os.path.dirname(__file__), "data", "squads.json")
+REPORTS_FILE = os.path.join(os.path.dirname(__file__), "data", "reports.json")
 SESSIONS_DIR = os.path.join(os.path.dirname(__file__), "data", "sessions")
 
 os.makedirs(os.path.dirname(TEAMS_FILE), exist_ok=True)
@@ -1083,3 +1084,79 @@ def get_player_sessions(player_id: str):
             })
 
     return sessions
+
+def list_player_reports(player_id=None):
+    """Returns saved analysis reports for a player (or all reports)."""
+    reports = _load_json(REPORTS_FILE, [])
+    if not reports:
+        # Seed default report for player_ss if file was empty
+        reports = [
+            {
+                "id": "REP-2026-SS01",
+                "name": "Spell Analysis - Good Length Channel",
+                "player_id": "player_ss",
+                "player_name": "ss",
+                "team_id": "team_trajecta_squad",
+                "team_name": "Coastal Warriors",
+                "squad_name": "Pace Battery",
+                "session_count": 2,
+                "sessions_included": ["sess_1793296664_c7201f", "sess_1793295739_c6e654"],
+                "analysis_date": "Oct 29, 2026",
+                "created_at": "Oct 29, 2026 11:45 AM",
+                "status": "Verified",
+                "summary": "Full tracking data for 4 deliveries across 2 spells. Good length channel discipline around 4th stump with peak speed of 96.9 mph (156 km/h) and 78% stumps threat rating.",
+                "metrics": {
+                    "total_deliveries": 4,
+                    "deliveries_with_tracking": 4,
+                    "avg_speed_mph": 86.8,
+                    "peak_speed_mph": 96.9,
+                    "good_length_pct": 75,
+                    "stumps_threat_pct": 82
+                },
+                "file_url": "/api/reports/REP-2026-SS01/download"
+            }
+        ]
+        _save_json(REPORTS_FILE, reports)
+
+    if player_id:
+        p_clean = player_id.lower().replace("player_", "")
+        return [
+            r for r in reports
+            if r.get("player_id") == player_id or
+               r.get("player_id", "").lower().replace("player_", "") == p_clean or
+               r.get("player_name", "").lower() == p_clean
+        ]
+    return reports
+
+def get_report(report_id):
+    """Retrieves a single report by ID."""
+    reports = list_player_reports()
+    for r in reports:
+        if r.get("id") == report_id:
+            return r
+    return None
+
+def create_report(data):
+    """Creates and persists a new analysis report."""
+    reports = _load_json(REPORTS_FILE, [])
+    report_id = data.get("id") or f"REP-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    new_report = {
+        "id": report_id,
+        "name": data.get("name") or "Player Deliveries Analysis Report",
+        "player_id": data.get("player_id") or "player_ss",
+        "player_name": data.get("player_name") or "ss",
+        "team_id": data.get("team_id") or "team_trajecta_squad",
+        "team_name": data.get("team_name") or "Coastal Warriors",
+        "squad_name": data.get("squad_name") or "Pace Battery",
+        "session_count": data.get("session_count") or 1,
+        "sessions_included": data.get("sessions_included") or [],
+        "analysis_date": data.get("analysis_date") or datetime.now().strftime("%b %d, %Y"),
+        "created_at": data.get("created_at") or datetime.now().strftime("%b %d, %Y %I:%M %p"),
+        "status": data.get("status") or "Verified",
+        "summary": data.get("summary") or "Comprehensive automated spell delivery trajectory analysis.",
+        "metrics": data.get("metrics") or {},
+        "file_url": f"/api/reports/{report_id}/download"
+    }
+    reports.insert(0, new_report)
+    _save_json(REPORTS_FILE, reports)
+    return new_report

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "REP-20261031-235343",
+    "name": "Player Deliveries Analysis Report",
+    "player_id": "ss",
+    "player_name": "ss",
+    "team_id": "team_trajecta_squad",
+    "team_name": "Coastal Warriors",
+    "squad_name": "Pace Battery",
+    "session_count": 1,
+    "sessions_included": [],
+    "analysis_date": "Oct 31, 2026",
+    "created_at": "Oct 31, 2026 11:53 PM",
+    "status": "Verified",
+    "summary": "Comprehensive automated spell delivery trajectory analysis.",
+    "metrics": {},
+    "file_url": "/api/reports/REP-20261031-235343/download"
+  },
+  {
+    "id": "REP-2026-SS01",
+    "name": "Spell Analysis - Good Length Channel",
+    "player_id": "player_ss",
+    "player_name": "ss",
+    "team_id": "team_trajecta_squad",
+    "team_name": "Coastal Warriors",
+    "squad_name": "Pace Battery",
+    "session_count": 2,
+    "sessions_included": [
+      "sess_1793296664_c7201f",
+      "sess_1793295739_c6e654"
+    ],
+    "analysis_date": "Oct 29, 2026",
+    "created_at": "Oct 29, 2026 11:45 AM",
+    "status": "Verified",
+    "summary": "Full tracking data for 4 deliveries across 2 spells. Good length channel discipline around 4th stump with peak speed of 96.9 mph (156 km/h) and 78% stumps threat rating.",
+    "metrics": {
+      "total_deliveries": 4,
+      "deliveries_with_tracking": 4,
+      "avg_speed_mph": 86.8,
+      "peak_speed_mph": 96.9,
+      "good_length_pct": 75,
+      "stumps_threat_pct": 82
+    },
+    "file_url": "/api/reports/REP-2026-SS01/download"
+  }
+]

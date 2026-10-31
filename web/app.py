@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from ultralytics import YOLO
 from web.sessions_manager import (
     create_session, list_sessions, get_session,
@@ -23,7 +23,8 @@ from web.teams_manager import (
     list_squads, get_squad, create_squad, update_squad, delete_squad,
     list_players, get_player, create_player, update_player, set_player_status,
     remove_player_from_team, delete_player, assign_existing_player_to_team,
-    list_all_registered_players, get_player_sessions
+    list_all_registered_players, get_player_sessions,
+    list_player_reports, get_report, create_report
 )
 
 # Real-world pitch dimensions in meters (MCC Laws of Cricket)
@@ -1544,6 +1545,35 @@ async def api_get_team_bundle(request: Request):
         "total_deliveries": len(all_deliveries),
         "all_deliveries": all_deliveries
     })
+
+@app.get("/api/players/{player_id}/reports")
+async def api_get_player_reports(player_id: str):
+    """Returns saved analysis reports for the player."""
+    reports = list_player_reports(player_id)
+    return JSONResponse(reports)
+
+@app.post("/api/reports/generate")
+async def api_generate_report(request: Request):
+    """Generates and persists an analysis report for player and selected sessions."""
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    report = create_report(data)
+    return JSONResponse(report)
+
+@app.get("/api/reports/{report_id}/download")
+async def api_download_report(report_id: str):
+    """Downloads a report as JSON/printable summary."""
+    report = get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    content = json.dumps(report, indent=2)
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=\"{report_id}_analysis_report.json\""}
+    )
 
 @app.post("/api/sessions/compile-highlight")
 async def api_compile_highlight(request: Request):
