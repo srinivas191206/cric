@@ -1042,12 +1042,24 @@
           <!-- Graphs View Container (Alternate Tab) -->
           <div id="team-analysis-graphs-view" class="hidden">
             <!-- Top Performance Graphs Header Row -->
+            <!-- Top Performance Graphs Header Row -->
             <div class="team-graphs-header-row" id="team-graphs-header-row">
               <div class="tgh-left">
-                <h2 class="tgh-title" id="tgh-title">Performance Graphs</h2>
+                <div class="tgh-icon-box">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+                </div>
+                <div class="tgh-titles">
+                  <h2 class="tgh-title" id="tgh-title">Performance Graphs</h2>
+                  <p class="tgh-sub">Visualize delivery patterns, pitch locations and release point data</p>
+                </div>
               </div>
               <div class="tgh-right">
-                <span class="tgh-count" id="tgh-deliveries-counter">0 Deliveries | 0 With Tracking Data</span>
+                <div class="tgh-tracking-pill" id="tgh-tracking-pill">
+                  <div class="tgh-ball-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><path d="M14 2a10 10 0 0 0-4 18"/><path d="M10 4a10 10 0 0 0 4 18"/></svg>
+                  </div>
+                  <span class="tgh-count" id="tgh-deliveries-counter">0 deliveries • 0 with tracking data</span>
+                </div>
               </div>
             </div>
 
@@ -1066,55 +1078,116 @@
             </div>
 
             <!-- SECTION 1: Performance Visualizations (Pitch Map, Beehive Chart, Release Points) -->
-            <div class="tgraphs-section-card" id="tgraphs-perf-card">
-              <div class="tgraphs-section-header">
+            <div class="tgraphs-section-card perf-vis-section-container" id="tgraphs-perf-card">
+              <div class="tgraphs-section-header perf-vis-header">
                 <div class="tsh-left">
                   <div class="tsh-icon tsh-icon-blue">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   </div>
                   <div>
                     <h3 class="tsh-title">Performance Visualizations</h3>
                     <p class="tsh-sub">Interactive analysis charts — one row; swipe or scroll horizontally</p>
                   </div>
                 </div>
-                <button type="button" class="tsh-collapse-btn" onclick="toggleTGraphsSection('tgraphs-perf-body', this)" aria-label="Toggle Section">—</button>
+                <div class="tsh-controls-group">
+                  <div class="tsh-badge-count">
+                    <span>3 Visualizations</span>
+                  </div>
+                  <div class="tsh-arrows-group">
+                    <button type="button" class="tsh-arrow-btn tsh-arrow-prev" id="btn-perf-scroll-prev" onclick="scrollPerfVisualizations(-1)" aria-label="Previous Chart" title="Previous Visualization">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button type="button" class="tsh-arrow-btn tsh-arrow-next active" id="btn-perf-scroll-next" onclick="scrollPerfVisualizations(1)" aria-label="Next Chart" title="Next Visualization">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                  <button type="button" class="tsh-collapse-pill-btn" id="btn-perf-collapse" onclick="togglePerfVisualizationsCollapse()" aria-label="Collapse / Expand Section">
+                    <span id="txt-perf-collapse">Collapse</span>
+                    <svg id="icon-perf-collapse" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="tgraphs-section-body" id="tgraphs-perf-body">
-                <div class="tgraphs-row-scroll">
+                <div class="tgraphs-row-scroll perf-vis-track" id="perf-vis-scroll-track">
                   <!-- Chart 1: Pitch Map -->
-                  <div class="tgraphs-chart-card">
-                    <div class="tgc-header">
-                      <h4 class="tgc-title">Pitch Map</h4>
-                      <p class="tgc-sub">Ball pitching locations and outcomes</p>
-                      <span class="tgc-hint">Drag to select region</span>
+                  <div class="tgraphs-chart-card perf-vis-card" id="card-pitch-map">
+                    <div class="pvc-header">
+                      <div class="pvc-header-top">
+                        <div class="pvc-header-left">
+                          <div class="pvc-icon pvc-icon-gold">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="3" width="3" height="18" rx="1"/><rect x="10.5" y="3" width="3" height="18" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/><line x1="3" y1="5" x2="21" y2="5"/></svg>
+                          </div>
+                          <div class="pvc-header-titles">
+                            <h4 class="pvc-title">Pitch Map</h4>
+                            <p class="pvc-sub">Ball pitching locations and outcomes</p>
+                            <span class="pvc-hint">Drag to select region</span>
+                          </div>
+                        </div>
+                        <div class="pvc-header-right">
+                          <span class="pvc-status-badge"><span class="pvc-status-dot"></span>Available</span>
+                          <button type="button" class="pvc-menu-btn" onclick="toggleCardContextMenu('menu-pitch-map', event)" aria-label="Pitch Map Options" title="Options">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                          </button>
+                          <div class="pvc-context-menu hidden" id="menu-pitch-map">
+                            <button type="button" onclick="resetAllTeamFilters()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Reset Region</button>
+                            <button type="button" onclick="toggleChartFullscreen('pitch-map-wrapper', 'Pitch Map')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>Toggle Fullscreen</button>
+                            <button type="button" onclick="exportChartSnapshot('team-pitch-map-3d', 'team-pitch-map-canvas', 'Pitch_Map')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Snapshot</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div class="tgc-canvas-wrapper" id="pitch-map-wrapper">
                       <canvas id="team-pitch-map-3d" class="tgc-3d-canvas" width="460" height="430"></canvas>
                       <canvas id="team-pitch-map-canvas" class="tgc-overlay-canvas" width="460" height="430"></canvas>
                     </div>
+                    <div class="pvc-footer">
+                      <div class="pvc-footer-left">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                        <span>Drag on the chart to select a region</span>
+                      </div>
+                      <button type="button" class="pvc-fullscreen-btn" onclick="toggleChartFullscreen('pitch-map-wrapper', 'Pitch Map')" title="Fullscreen View" aria-label="Fullscreen">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Chart 2: Beehive Chart -->
-                  <div class="tgraphs-chart-card" id="beehive-card">
-                    <div class="tgc-header">
-                      <div class="tgc-header-top">
-                        <div>
-                          <h4 class="tgc-title">Beehive Chart</h4>
-                          <p class="tgc-sub">Ball position at crease (batter's view)</p>
-                          <span class="tgc-hint">Drag to select region</span>
+                  <div class="tgraphs-chart-card perf-vis-card" id="beehive-card">
+                    <div class="pvc-header">
+                      <div class="pvc-header-top">
+                        <div class="pvc-header-left">
+                          <div class="pvc-icon pvc-icon-purple">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                          </div>
+                          <div class="pvc-header-titles">
+                            <h4 class="pvc-title">Beehive Chart</h4>
+                            <p class="pvc-sub">Ball position at crease (batter's view)</p>
+                            <span class="pvc-hint">Drag to select region</span>
+                          </div>
                         </div>
-                        <!-- Beehive Selection Toolbar (Screenshot 2) -->
-                        <div class="beehive-selection-toolbar hidden" id="beehive-selection-toolbar">
-                          <button type="button" class="bst-btn bst-include" onclick="applyBeehiveRegionFilter('include')">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span id="bst-include-label">Include (0)</span>
+                        <div class="pvc-header-right">
+                          <span class="pvc-status-badge"><span class="pvc-status-dot"></span>Available</span>
+                          <button type="button" class="pvc-menu-btn" onclick="toggleCardContextMenu('menu-beehive', event)" aria-label="Beehive Options" title="Options">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                           </button>
-                          <button type="button" class="bst-btn bst-exclude" onclick="applyBeehiveRegionFilter('exclude')">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            <span id="bst-exclude-label">Exclude (0)</span>
-                          </button>
-                          <button type="button" class="bst-btn bst-cancel" onclick="cancelBeehiveSelection()">Cancel</button>
+                          <div class="pvc-context-menu hidden" id="menu-beehive">
+                            <button type="button" onclick="cancelBeehiveSelection()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Reset Selection</button>
+                            <button type="button" onclick="toggleChartFullscreen('beehive-canvas-wrapper', 'Beehive Chart')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>Toggle Fullscreen</button>
+                            <button type="button" onclick="exportChartSnapshot('team-beehive-3d', 'team-beehive-canvas', 'Beehive_Chart')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Snapshot</button>
+                          </div>
                         </div>
+                      </div>
+                      <!-- Beehive Selection Toolbar (Preserved) -->
+                      <div class="beehive-selection-toolbar hidden" id="beehive-selection-toolbar">
+                        <button type="button" class="bst-btn bst-include" onclick="applyBeehiveRegionFilter('include')">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span id="bst-include-label">Include (0)</span>
+                        </button>
+                        <button type="button" class="bst-btn bst-exclude" onclick="applyBeehiveRegionFilter('exclude')">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          <span id="bst-exclude-label">Exclude (0)</span>
+                        </button>
+                        <button type="button" class="bst-btn bst-cancel" onclick="cancelBeehiveSelection()">Cancel</button>
                       </div>
                     </div>
                     <div class="tgc-canvas-wrapper" id="beehive-canvas-wrapper">
@@ -1124,18 +1197,56 @@
                     <div class="beehive-status-bar" id="beehive-status-bar">
                       <span id="beehive-status-text"></span>
                     </div>
+                    <div class="pvc-footer">
+                      <div class="pvc-footer-left">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                        <span>Drag on the chart to select a region</span>
+                      </div>
+                      <button type="button" class="pvc-fullscreen-btn" onclick="toggleChartFullscreen('beehive-canvas-wrapper', 'Beehive Chart')" title="Fullscreen View" aria-label="Fullscreen">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Chart 3: Release Points -->
-                  <div class="tgraphs-chart-card">
-                    <div class="tgc-header">
-                      <h4 class="tgc-title">Release Points</h4>
-                      <p class="tgc-sub">Bowling release point analysis</p>
-                      <span class="tgc-hint">Drag to select region</span>
+                  <div class="tgraphs-chart-card perf-vis-card" id="card-release-points">
+                    <div class="pvc-header">
+                      <div class="pvc-header-top">
+                        <div class="pvc-header-left">
+                          <div class="pvc-icon pvc-icon-blue">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </div>
+                          <div class="pvc-header-titles">
+                            <h4 class="pvc-title">Release Points</h4>
+                            <p class="pvc-sub">Bowling release point analysis</p>
+                            <span class="pvc-hint">Drag to select region</span>
+                          </div>
+                        </div>
+                        <div class="pvc-header-right">
+                          <span class="pvc-status-badge"><span class="pvc-status-dot"></span>Available</span>
+                          <button type="button" class="pvc-menu-btn" onclick="toggleCardContextMenu('menu-release-points', event)" aria-label="Release Points Options" title="Options">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                          </button>
+                          <div class="pvc-context-menu hidden" id="menu-release-points">
+                            <button type="button" onclick="resetAllTeamFilters()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Reset Region</button>
+                            <button type="button" onclick="toggleChartFullscreen('release-points-wrapper', 'Release Points')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>Toggle Fullscreen</button>
+                            <button type="button" onclick="exportChartSnapshot('team-release-points-3d', 'team-release-points-canvas', 'Release_Points')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Snapshot</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div class="tgc-canvas-wrapper" id="release-points-wrapper">
                       <canvas id="team-release-points-3d" class="tgc-3d-canvas" width="460" height="430"></canvas>
                       <canvas id="team-release-points-canvas" class="tgc-overlay-canvas" width="460" height="430"></canvas>
+                    </div>
+                    <div class="pvc-footer">
+                      <div class="pvc-footer-left">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                        <span>Drag on the chart to select a region</span>
+                      </div>
+                      <button type="button" class="pvc-fullscreen-btn" onclick="toggleChartFullscreen('release-points-wrapper', 'Release Points')" title="Fullscreen View" aria-label="Fullscreen">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -4479,6 +4590,28 @@
             <span>Download Report Data</span>
           </button>
         </div>
+      </div>
+  <!-- ========================================================
+       CHART FULLSCREEN INSPECTION MODAL
+  ======================================================== -->
+  <div class="modal-backdrop hidden" id="modal-chart-fullscreen" onclick="handleChartFullscreenBackdrop(event)">
+    <div class="modal-card modal-chart-fs-card" role="dialog" aria-modal="true" aria-labelledby="mcf-chart-title">
+      <div class="apw-header">
+        <div>
+          <div class="apw-step-badge">TRAJECTA 3D TELEMETRY</div>
+          <h3 class="apw-title" id="mcf-chart-title">Pitch Map - Fullscreen View</h3>
+          <p class="apw-subtitle">Interactive 3D Perspective & Trajectory Zone Inspection</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeChartFullscreen()" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="mcf-body" id="mcf-body">
+        <div class="mcf-canvas-slot" id="mcf-canvas-slot">
+          <!-- Canvas moved or mirrored here when fullscreen is open -->
+        </div>
+      </div>
+      <div class="apw-footer mcf-footer">
+        <span class="mcf-hint-text">👆 Drag to select region • Use Esc or Close to exit</span>
+        <button type="button" class="btn-modal-cancel" onclick="closeChartFullscreen()">Exit Fullscreen</button>
       </div>
     </div>
   </div>
