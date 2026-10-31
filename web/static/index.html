@@ -1150,80 +1150,211 @@
               </div>
             </div>
 
-            <!-- SECTION 2: Batting Analysis (Screenshot 3) -->
-            <div class="tgraphs-section-card" id="tgraphs-batting-card">
-              <div class="tgraphs-section-header">
-                <div class="tsh-left">
-                  <div class="tsh-icon tsh-icon-orange">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+            <!-- SECTION 2: Batting Analysis (Redesigned matching Advanced Batting Statistics) -->
+            <div class="tgraphs-section-card adv-batting-section batting-analysis-section" id="tgraphs-batting-card">
+              <!-- Redesigned Amber-Tinted Header Card -->
+              <div class="adv-batting-header batting-analysis-header">
+                <div class="adv-bh-left">
+                  <div class="adv-bh-icon batting-icon-amber">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                      <path d="M19.5 4.5l-3-3a1.5 1.5 0 0 0-2.12 0l-9.9 9.9a2 2 0 0 0-.58 1.41v3.18l-2.4 2.4a1 1 0 0 0 1.4 1.4l2.4-2.4h3.18c.53 0 1.04-.21 1.41-.58l9.9-9.9a1.5 1.5 0 0 0 0-2.12z"/>
+                    </svg>
                   </div>
-                  <div>
-                    <h3 class="tsh-title">Batting Analysis</h3>
-                    <p class="tsh-sub">Shot patterns and characteristics</p>
+                  <div class="adv-bh-titles">
+                    <h3 class="adv-bh-title">Batting Analysis</h3>
+                    <p class="adv-bh-sub">Shot patterns, directional spray, and footwork characteristics</p>
                   </div>
                 </div>
-                <button type="button" class="tsh-collapse-btn" onclick="toggleTGraphsSection('tgraphs-batting-body', this)" aria-label="Toggle Section">—</button>
+                <div class="adv-bh-right">
+                  <!-- Stat 1: Total Shots -->
+                  <div class="adv-header-kpi">
+                    <div class="adv-kpi-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                        <path d="M2 12h20"/>
+                      </svg>
+                    </div>
+                    <div class="adv-kpi-info">
+                      <span class="adv-kpi-label">Total Shots</span>
+                      <span class="adv-kpi-value" id="batting-header-total-shots">20</span>
+                    </div>
+                  </div>
+
+                  <!-- Stat 2: Attacking Rate -->
+                  <div class="adv-header-kpi">
+                    <div class="adv-kpi-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F00035" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                      </svg>
+                    </div>
+                    <div class="adv-kpi-info">
+                      <span class="adv-kpi-label">Attacking Rate</span>
+                      <span class="adv-kpi-value" id="batting-header-attack-rate">45%</span>
+                    </div>
+                  </div>
+
+                  <!-- Stat 3: Front Foot Dominance -->
+                  <div class="adv-header-kpi">
+                    <div class="adv-kpi-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2685F5" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      </svg>
+                    </div>
+                    <div class="adv-kpi-info">
+                      <span class="adv-kpi-label">Front Foot</span>
+                      <span class="adv-kpi-value" id="batting-header-frontfoot-rate">75%</span>
+                    </div>
+                  </div>
+
+                  <!-- Collapse Button -->
+                  <button type="button" class="tsh-collapse-btn adv-collapse-btn" onclick="toggleTGraphsSection('tgraphs-batting-body', this)" aria-label="Toggle Section">—</button>
+                </div>
               </div>
+
+              <!-- Body with 3-Card Grid -->
               <div class="tgraphs-section-body" id="tgraphs-batting-body">
-                <div class="tgraphs-row-scroll">
-                  <!-- Chart 1: Wagon Wheel -->
-                  <div class="tgraphs-chart-card wagon-wheel-card">
-                    <div class="tgc-header">
-                      <h4 class="tgc-title">Wagon Wheel</h4>
-                      <p class="tgc-sub">Red lines denote aggressive intent, navy lines denote defensive intent.</p>
-                      <p class="tgc-sub2" id="wagon-wheel-sub2">0 of 0 deliveries with direction data - click a field sector to filter</p>
-                    </div>
-                    <div class="tgc-canvas-wrapper wagon-wheel-wrapper">
-                      <canvas id="team-wagon-wheel-canvas" width="440" height="440"></canvas>
-                    </div>
-                    <!-- Legend -->
-                    <div class="tgc-legend wagon-legend">
-                      <div class="tgl-item">
-                        <span class="tgl-dot dot-red"></span>
-                        <span class="tgl-label">Aggressive</span>
-                        <span class="tgl-val" id="ww-aggressive-stat">0 - 0.0%</span>
+                <div class="adv-cards-grid">
+                  <!-- CARD 1: Wagon Wheel -->
+                  <div class="adv-chart-card" id="card-batting-wagon">
+                    <div class="acc-header">
+                      <div class="acc-header-left">
+                        <div class="acc-icon acc-icon-red">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F00035" stroke-width="2.2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="2" x2="12" y2="22"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <circle cx="12" cy="12" r="4"/>
+                          </svg>
+                        </div>
+                        <div class="acc-titles">
+                          <h4 class="acc-title">Wagon Wheel</h4>
+                          <p class="acc-sub">Aggressive vs defensive directional spray</p>
+                        </div>
                       </div>
-                      <div class="tgl-item">
-                        <span class="tgl-dot dot-navy"></span>
-                        <span class="tgl-label">Defensive</span>
-                        <span class="tgl-val" id="ww-defensive-stat">0 - 0.0%</span>
+                      <div class="acc-header-right">
+                        <span class="acc-status-badge"><span class="acc-status-dot"></span>Available</span>
+                        <button type="button" class="acc-menu-btn" title="Options" onclick="event.stopPropagation()">⋮</button>
+                      </div>
+                    </div>
+
+                    <!-- Wagon Wheel Canvas Area -->
+                    <div class="acc-chart-area">
+                      <div class="acc-canvas-container" id="wagon-canvas-container">
+                        <canvas id="team-wagon-wheel-canvas" width="360" height="260"></canvas>
+                        <div class="acc-donut-center" id="wagon-donut-center">
+                          <span class="acc-center-label">Total Shots</span>
+                          <span class="acc-center-val" id="wagon-wheel-total-count">20</span>
+                        </div>
+                        <div class="acc-floating-tooltip" id="wagon-tooltip"></div>
+                      </div>
+                    </div>
+
+                    <!-- Sector & Intent Breakdown Table -->
+                    <div class="acc-table-wrap">
+                      <div class="acc-table-header">
+                        <span class="ath-col ath-type">FIELD SECTOR</span>
+                        <span class="ath-col ath-count">COUNT</span>
+                        <span class="ath-col ath-pct">PERCENTAGE</span>
+                      </div>
+                      <div class="acc-table-body" id="wagon-wheel-legend">
+                        <!-- Populated dynamically -->
                       </div>
                     </div>
                   </div>
 
-                  <!-- Chart 2: Shot Distribution Donut -->
-                  <div class="tgraphs-chart-card donut-chart-card">
-                    <div class="tgc-header">
-                      <h4 class="tgc-title">Shot Distribution</h4>
-                      <p class="tgc-sub">Percentage breakdown of shot types</p>
-                    </div>
-                    <div class="tgc-donut-wrapper">
-                      <canvas id="team-shot-dist-canvas" width="380" height="300"></canvas>
-                      <div class="donut-center-badge" id="shot-dist-center-badge">
-                        <span class="dcb-label">Total</span>
-                        <span class="dcb-val" id="shot-dist-total-count">0</span>
+                  <!-- CARD 2: Shot Distribution -->
+                  <div class="adv-chart-card" id="card-batting-shots">
+                    <div class="acc-header">
+                      <div class="acc-header-left">
+                        <div class="acc-icon acc-icon-amber">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFAB00" stroke-width="2.2">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
+                        <div class="acc-titles">
+                          <h4 class="acc-title">Shot Distribution</h4>
+                          <p class="acc-sub">Percentage breakdown of shot execution</p>
+                        </div>
+                      </div>
+                      <div class="acc-header-right">
+                        <span class="acc-status-badge"><span class="acc-status-dot"></span>Available</span>
+                        <button type="button" class="acc-menu-btn" title="Options" onclick="event.stopPropagation()">⋮</button>
                       </div>
                     </div>
-                    <div class="donut-legend-list" id="shot-dist-legend">
-                      <!-- Rendered dynamically -->
+
+                    <!-- Shot Distribution Donut Chart Area -->
+                    <div class="acc-chart-area">
+                      <div class="acc-canvas-container" id="shot-dist-canvas-container">
+                        <canvas id="team-shot-dist-canvas" width="360" height="260"></canvas>
+                        <div class="acc-donut-center" id="shot-dist-center-badge">
+                          <span class="acc-center-label">Total Shots</span>
+                          <span class="acc-center-val" id="shot-dist-total-count">20</span>
+                        </div>
+                        <div class="acc-floating-tooltip" id="shot-dist-tooltip"></div>
+                      </div>
+                    </div>
+
+                    <!-- Data Breakdown Table -->
+                    <div class="acc-table-wrap">
+                      <div class="acc-table-header">
+                        <span class="ath-col ath-type">SHOT TYPE</span>
+                        <span class="ath-col ath-count">COUNT</span>
+                        <span class="ath-col ath-pct">PERCENTAGE</span>
+                      </div>
+                      <div class="acc-table-body" id="shot-dist-legend">
+                        <!-- Populated dynamically -->
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Chart 3: Footwork Distribution Donut -->
-                  <div class="tgraphs-chart-card donut-chart-card">
-                    <div class="tgc-header">
-                      <h4 class="tgc-title">Footwork Distribution</h4>
-                      <p class="tgc-sub">Front foot vs back foot vs step out frequency</p>
-                    </div>
-                    <div class="tgc-donut-wrapper">
-                      <canvas id="team-footwork-dist-canvas" width="380" height="300"></canvas>
-                      <div class="donut-center-badge" id="footwork-dist-center-badge">
-                        <span class="dcb-label">Total</span>
-                        <span class="dcb-val" id="footwork-dist-total-count">0</span>
+                  <!-- CARD 3: Footwork Distribution -->
+                  <div class="adv-chart-card" id="card-batting-footwork">
+                    <div class="acc-header">
+                      <div class="acc-header-left">
+                        <div class="acc-icon acc-icon-blue">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2685F5" stroke-width="2.2">
+                            <path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V7a5 5 0 0 1 5-5z"/>
+                            <path d="M19 11v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                          </svg>
+                        </div>
+                        <div class="acc-titles">
+                          <h4 class="acc-title">Footwork Distribution</h4>
+                          <p class="acc-sub">Front foot vs back foot balance</p>
+                        </div>
+                      </div>
+                      <div class="acc-header-right">
+                        <span class="acc-status-badge"><span class="acc-status-dot"></span>Available</span>
+                        <button type="button" class="acc-menu-btn" title="Options" onclick="event.stopPropagation()">⋮</button>
                       </div>
                     </div>
-                    <div class="donut-legend-list" id="footwork-dist-legend">
-                      <!-- Rendered dynamically -->
+
+                    <!-- Footwork Distribution Donut Chart Area -->
+                    <div class="acc-chart-area">
+                      <div class="acc-canvas-container" id="footwork-dist-canvas-container">
+                        <canvas id="team-footwork-dist-canvas" width="360" height="260"></canvas>
+                        <div class="acc-donut-center" id="footwork-dist-center-badge">
+                          <span class="acc-center-label">Total Shots</span>
+                          <span class="acc-center-val" id="footwork-dist-total-count">20</span>
+                        </div>
+                        <div class="acc-floating-tooltip" id="footwork-dist-tooltip"></div>
+                      </div>
+                    </div>
+
+                    <!-- Data Breakdown Table -->
+                    <div class="acc-table-wrap">
+                      <div class="acc-table-header">
+                        <span class="ath-col ath-type">FOOTWORK</span>
+                        <span class="ath-col ath-count">COUNT</span>
+                        <span class="ath-col ath-pct">PERCENTAGE</span>
+                      </div>
+                      <div class="acc-table-body" id="footwork-dist-legend">
+                        <!-- Populated dynamically -->
+                      </div>
                     </div>
                   </div>
                 </div>

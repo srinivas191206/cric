@@ -16403,3 +16403,87 @@ body.view-player-sessions .dashboard-content-viewport {
   color: #94A3B8;
   text-align: right;
 }
+
+/* Amber/Gold Tinted Header for Batting Analysis (Section 2) */
+.batting-analysis-header {
+  background: #19140a !important;
+  border: 1px solid rgba(255, 171, 0, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 171, 0, 0.15) !important;
+}
+
+.batting-icon-amber {
+  background: rgba(255, 171, 0, 0.12) !important;
+  border: 1.5px solid rgba(255, 171, 0, 0.45) !important;
+  color: #FFAB00 !important;
+  box-shadow: 0 0 12px rgba(255, 171, 0, 0.25) !important;
+}
+
+.acc-icon-blue {
+  background: rgba(38, 133, 245, 0.15);
+  border: 1.5px solid rgba(38, 133, 245, 0.35);
+  color: #2685F5;
+}
+
+.wagon-intent-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.wagon-intent-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wagon-intent-pill.pill-aggr {
+  background: rgba(240, 0, 53, 0.12);
+  border: 1px solid rgba(240, 0, 53, 0.3);
+  color: #F87171;
+}
+
+.wagon-intent-pill.pill-aggr:hover,
+.wagon-intent-pill.pill-aggr.active {
+  background: rgba(240, 0, 53, 0.25);
+  border-color: #F00035;
+  color: #FFFFFF;
+}
+
+.wagon-intent-pill.pill-def {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38BDF8;
+}
+
+.wagon-intent-pill.pill-def:hover,
+.wagon-intent-pill.pill-def.active {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38BDF8;
+  color: #FFFFFF;
+}
+
+/* Wagon Wheel center badge */
+#wagon-donut-center {
+  width: 58px;
+  height: 58px;
+  background: rgba(8, 14, 26, 0.92);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+
+#wagon-donut-center .acc-center-label {
+  font-size: 0.54rem;
+}
+
+#wagon-donut-center .acc-center-val {
+  font-size: 1.15rem;
+  margin-top: 0;
+}

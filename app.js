@@ -12024,72 +12024,32 @@ function drawTeamReleasePoints(deliveries) {
   ctx.restore();
 }
 
+function highlightWagonSector(sector) {
+  const canvas = document.getElementById('team-wagon-wheel-canvas');
+  if (!canvas || !canvas._redrawFn) return;
+  canvas._hoveredSector = sector;
+  canvas._redrawFn();
+}
+
+function unhighlightWagonSector() {
+  const canvas = document.getElementById('team-wagon-wheel-canvas');
+  if (!canvas || !canvas._redrawFn) return;
+  canvas._hoveredSector = null;
+  canvas._redrawFn();
+}
+
 function drawTeamWagonWheel(deliveries) {
   const canvas = document.getElementById('team-wagon-wheel-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  const H = canvas.height;
-
-  ctx.clearRect(0, 0, W, H);
+  const W = canvas.width || 360;
+  const H = canvas.height || 260;
 
   const cx = W / 2;
   const cy = H / 2;
-  const R = 175;
+  const R = 98; // fits nicely within 260 height with room for perimeter badges
 
-  // 1. Lush Green Outfield Circular Lawn
-  const fieldGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, R);
-  fieldGrad.addColorStop(0, '#58914b');
-  fieldGrad.addColorStop(0.7, '#497c3d');
-  fieldGrad.addColorStop(1, '#3b6731');
-  ctx.fillStyle = fieldGrad;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Concentric mowing texture rings
-  for (let r = 35; r < R; r += 25) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-    ctx.lineWidth = 12;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  // Radial Sector Lines
-  for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
-    ctx.stroke();
-  }
-
-  // 30-Yard Circle
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.arc(cx, cy, 95, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Boundary Rope
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Central Pitch Strip
-  ctx.fillStyle = '#baa482';
-  ctx.fillRect(cx - 7, cy - 20, 14, 40);
-  ctx.strokeStyle = '#8f7b5f';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(cx - 7, cy - 20, 14, 40);
-
-  // Sector Statistics & Counts
+  // Calculate sector and intent statistics
   let aggressiveCount = 0;
   let defensiveCount = 0;
   let validShotsCount = 0;
@@ -12112,177 +12072,359 @@ function drawTeamWagonWheel(deliveries) {
     }
   });
 
-  // If filtered by sector, draw subtle highlight wedge over active sector
-  if (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector') {
-    const activeSec = teamGraphsStatFilter.value;
-    ctx.save();
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
-    ctx.strokeStyle = '#f59e0b';
+  // Update Center Badge in DOM
+  const totalEl = document.getElementById('wagon-wheel-total-count');
+  if (totalEl) totalEl.textContent = validShotsCount;
+
+  function renderChart() {
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Lush Green Outfield Circular Lawn
+    const fieldGrad = ctx.createRadialGradient(cx, cy, 15, cx, cy, R);
+    fieldGrad.addColorStop(0, '#3b6a32');
+    fieldGrad.addColorStop(0.7, '#2f5728');
+    fieldGrad.addColorStop(1, '#23441d');
+    ctx.fillStyle = fieldGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Concentric subtle mowing texture rings
+    for (let r = 24; r < R; r += 18) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Radial Sector Boundary Lines
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      ctx.stroke();
+    }
+
+    // Highlighted Sector Wedge (Active filter or hovered)
+    const activeSec = (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector')
+      ? teamGraphsStatFilter.value
+      : canvas._hoveredSector;
+
+    if (activeSec) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 171, 0, 0.28)';
+      ctx.strokeStyle = '#FFAB00';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      if (activeSec === 'straight') {
+        ctx.arc(cx, cy, R, (-90 - 30) * Math.PI / 180, (-90 + 30) * Math.PI / 180);
+      } else if (activeSec === 'leg') {
+        ctx.arc(cx, cy, R, (-90 + 30) * Math.PI / 180, (-90 + 150) * Math.PI / 180);
+      } else if (activeSec === 'behind') {
+        ctx.arc(cx, cy, R, (-90 + 150) * Math.PI / 180, (-90 + 210) * Math.PI / 180);
+      } else if (activeSec === 'off') {
+        ctx.arc(cx, cy, R, (-90 + 210) * Math.PI / 180, (-90 + 330) * Math.PI / 180);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 30-Yard Circle (dashed)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 54, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Boundary Rope
+    ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    if (activeSec === 'straight') {
-      ctx.arc(cx, cy, R, (-90 - 30) * Math.PI / 180, (-90 + 30) * Math.PI / 180);
-    } else if (activeSec === 'leg') {
-      ctx.arc(cx, cy, R, (-90 + 30) * Math.PI / 180, (-90 + 150) * Math.PI / 180);
-    } else if (activeSec === 'off') {
-      ctx.arc(cx, cy, R, (-90 - 150) * Math.PI / 180, (-90 - 30) * Math.PI / 180);
-    } else if (activeSec === 'behind') {
-      ctx.arc(cx, cy, R, (-90 + 150) * Math.PI / 180, (-90 + 210) * Math.PI / 180);
-    }
-    ctx.closePath();
-    ctx.fill();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.restore();
-  }
 
-  // Radial Shot Lines:
-  deliveries.forEach((d, idx) => {
-    const bi = enrichDeliveryWithBattingInsights(d, idx);
-    if (bi.wagonAngle === null) return;
-
-    const rad = (bi.wagonAngle * Math.PI) / 180;
-    const len = R * (0.25 + bi.wagonDistance * 0.70);
-    const destX = cx + Math.sin(rad) * len;
-    const destY = cy - Math.cos(rad) * len;
-
-    ctx.save();
-    if (bi.intent === 'Aggressive') {
-      ctx.strokeStyle = '#ef4444';
-      ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
-      ctx.shadowBlur = 4;
-    } else {
-      ctx.strokeStyle = '#38bdf8';
-      ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
-      ctx.shadowBlur = 3;
-    }
-    ctx.lineWidth = 2.4;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(destX, destY);
-    ctx.stroke();
-    ctx.restore();
-  });
-
-  // Center Total Shots Badge
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.fillStyle = '#0f172a';
-  ctx.font = '800 13px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${validShotsCount}`, cx, cy + 5);
-
-  // Perimeter Sector Percentages & Badges
-  const totalWithDir = validShotsCount || 1;
-  const pOff = ((offSectorCount / totalWithDir) * 100).toFixed(0);
-  const pLeg = ((legSectorCount / totalWithDir) * 100).toFixed(0);
-  const pStraight = ((straightSectorCount / totalWithDir) * 100).toFixed(0);
-
-  const drawSectorPill = (label, pct, px, py, isSelected) => {
-    ctx.save();
-    ctx.font = '700 11px system-ui, sans-serif';
-    const text = `${label} ${pct}%`;
-    const tw = ctx.measureText(text).width;
-    ctx.fillStyle = isSelected ? '#f59e0b' : 'rgba(15, 23, 42, 0.75)';
-    ctx.beginPath();
-    ctx.roundRect(px - tw / 2 - 8, py - 10, tw + 16, 20, 10);
-    ctx.fill();
-    ctx.strokeStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.25)';
+    // Central Pitch Strip
+    ctx.fillStyle = '#baa482';
+    ctx.fillRect(cx - 5, cy - 14, 10, 28);
+    ctx.strokeStyle = '#8f7b5f';
     ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.strokeRect(cx - 5, cy - 14, 10, 28);
 
-    ctx.fillStyle = isSelected ? '#000000' : '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, px, py);
-    ctx.restore();
-  };
+    // Radial Shot Spray Lines
+    deliveries.forEach((d, idx) => {
+      const bi = enrichDeliveryWithBattingInsights(d, idx);
+      if (bi.wagonAngle === null) return;
 
-  const selSec = (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector') ? teamGraphsStatFilter.value : null;
-  drawSectorPill('OFF', pOff, cx - 105, cy - 60, selSec === 'off');
-  drawSectorPill('LEG', pLeg, cx + 105, cy - 60, selSec === 'leg');
-  drawSectorPill('STRAIGHT', pStraight, cx, cy - 130, selSec === 'straight');
-  if (behindSectorCount > 0) {
-    const pBehind = ((behindSectorCount / totalWithDir) * 100).toFixed(0);
-    drawSectorPill('BEHIND', pBehind, cx, cy + 125, selSec === 'behind');
-  }
+      const rad = (bi.wagonAngle * Math.PI) / 180;
+      // Emanate from crease radius (30) outward to length
+      const minL = 30;
+      const maxL = R - 4;
+      const len = minL + (maxL - minL) * (0.35 + bi.wagonDistance * 0.65);
+      const startX = cx + Math.sin(rad) * 28;
+      const startY = cy - Math.cos(rad) * 28;
+      const destX = cx + Math.sin(rad) * len;
+      const destY = cy - Math.cos(rad) * len;
 
-  // Interactive Sector Click Handler
-  canvas.style.cursor = 'pointer';
-  canvas.onclick = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    const dx = x - cx;
-    const dy = y - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist <= 26) {
-      if (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector') {
-        setTeamGraphsStatFilter('sector', teamGraphsStatFilter.value, '');
+      ctx.save();
+      if (bi.intent === 'Aggressive') {
+        ctx.strokeStyle = '#F00035';
+        ctx.shadowColor = 'rgba(240, 0, 53, 0.7)';
+        ctx.shadowBlur = 5;
+      } else {
+        ctx.strokeStyle = '#38BDF8';
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+        ctx.shadowBlur = 4;
       }
-      return;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(destX, destY);
+      ctx.stroke();
+
+      // Terminal ball impact pip
+      ctx.fillStyle = bi.intent === 'Aggressive' ? '#FFFFFF' : '#38BDF8';
+      ctx.beginPath();
+      ctx.arc(destX, destY, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Sector Percentages & Badges along perimeter
+    const totalWithDir = validShotsCount || 1;
+    const pOff = Math.round((offSectorCount / totalWithDir) * 100);
+    const pLeg = Math.round((legSectorCount / totalWithDir) * 100);
+    const pStraight = Math.round((straightSectorCount / totalWithDir) * 100);
+    const pBehind = Math.round((behindSectorCount / totalWithDir) * 100);
+
+    const drawSectorPill = (label, pct, px, py, isSelected) => {
+      ctx.save();
+      ctx.font = '700 10px Outfit, system-ui, sans-serif';
+      const text = `${label} ${pct}%`;
+      const tw = ctx.measureText(text).width;
+      ctx.fillStyle = isSelected ? '#FFAB00' : 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(px - tw / 2 - 6, py - 9, tw + 12, 18, 9);
+      ctx.fill();
+      ctx.strokeStyle = isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.fillStyle = isSelected ? '#000000' : '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, px, py);
+      ctx.restore();
+    };
+
+    const selSec = (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector') ? teamGraphsStatFilter.value : canvas._hoveredSector;
+    drawSectorPill('OFF', pOff, cx - 68, cy - 38, selSec === 'off');
+    drawSectorPill('LEG', pLeg, cx + 68, cy - 38, selSec === 'leg');
+    drawSectorPill('STRAIGHT', pStraight, cx, cy - 76, selSec === 'straight');
+    if (behindSectorCount > 0) {
+      drawSectorPill('BEHIND', pBehind, cx, cy + 74, selSec === 'behind');
     }
-    if (dist > R + 25) return;
-
-    const rad = Math.atan2(dx, -dy);
-    const deg = (rad * 180) / Math.PI;
-
-    let sec = 'straight';
-    let lbl = 'Straight Shots';
-    if (deg < -30 && deg > -150) {
-      sec = 'off';
-      lbl = 'Off Side Shots';
-    } else if (deg > 30 && deg < 150) {
-      sec = 'leg';
-      lbl = 'Leg Side Shots';
-    } else if (deg <= -150 || deg >= 150) {
-      sec = 'behind';
-      lbl = 'Behind Wicket';
-    }
-    setTeamGraphsStatFilter('sector', sec, `Wagon: ${lbl}`);
-  };
-
-  // Update Legend and Subtitle
-  const sub2 = document.getElementById('wagon-wheel-sub2');
-  if (sub2) {
-    sub2.textContent = `${validShotsCount} of ${deliveries.length} deliveries with direction data - click a field sector to filter`;
   }
 
-  const aggrStat = document.getElementById('ww-aggressive-stat');
-  const defStat = document.getElementById('ww-defensive-stat');
-  const totalIntent = (aggressiveCount + defensiveCount) || 1;
-  if (aggrStat) {
-    aggrStat.textContent = `${aggressiveCount} - ${((aggressiveCount / totalIntent) * 100).toFixed(1)}%`;
-    const item = aggrStat.closest('.tgl-item');
-    if (item) {
-      item.style.cursor = 'pointer';
-      item.title = 'Click to filter visualizations to Aggressive intent';
-      const isSel = teamGraphsStatFilter && teamGraphsStatFilter.category === 'intent' && teamGraphsStatFilter.value === 'Aggressive';
-      item.style.background = isSel ? 'rgba(239, 68, 68, 0.28)' : '';
-      item.style.padding = '4px 8px';
-      item.style.borderRadius = '6px';
-      item.onclick = () => setTeamGraphsStatFilter('intent', 'Aggressive', 'Aggressive Intent');
-    }
+  canvas._redrawFn = renderChart;
+  renderChart();
+
+  // Mousemove and Click Events (attached once)
+  if (!canvas._wagonEventsBound) {
+    canvas._wagonEventsBound = true;
+    canvas.style.cursor = 'pointer';
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+      const dx = mx - cx;
+      const dy = my - cy;
+      const dist = Math.hypot(dx, dy);
+
+      const tt = document.getElementById('wagon-tooltip');
+      const leg = document.getElementById('wagon-wheel-legend');
+
+      if (dist <= R + 18 && dist >= 24) {
+        const rad = Math.atan2(dx, -dy);
+        const deg = (rad * 180) / Math.PI;
+
+        let sec = 'straight';
+        let lbl = 'Straight Shots';
+        let count = straightSectorCount;
+        if (deg < -30 && deg > -150) {
+          sec = 'off';
+          lbl = 'Off Side Shots';
+          count = offSectorCount;
+        } else if (deg > 30 && deg < 150) {
+          sec = 'leg';
+          lbl = 'Leg Side Shots';
+          count = legSectorCount;
+        } else if (deg <= -150 || deg >= 150) {
+          sec = 'behind';
+          lbl = 'Behind Wicket';
+          count = behindSectorCount;
+        }
+
+        if (canvas._hoveredSector !== sec) {
+          canvas._hoveredSector = sec;
+          renderChart();
+        }
+
+        // Highlight table row
+        if (leg) {
+          leg.querySelectorAll('.acc-table-row').forEach(row => {
+            row.classList.toggle('hover-highlight', row.getAttribute('data-sector') === sec);
+          });
+        }
+
+        // Show Tooltip
+        if (tt) {
+          const totalWithDir = validShotsCount || 1;
+          const pct = ((count / totalWithDir) * 100).toFixed(1);
+          tt.innerHTML = `
+            <div class="acc-tt-header">
+              <span class="acc-tt-dot" style="background: #FFAB00;"></span>
+              <span>${lbl}</span>
+            </div>
+            <div class="acc-tt-body">
+              <span>${count} shots</span>
+              <span class="acc-tt-pct" style="color: #FFAB00;">${pct}%</span>
+            </div>
+          `;
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          tt.style.left = `${Math.min(rect.width - 120, Math.max(8, offsetX + 10))}px`;
+          tt.style.top = `${Math.min(rect.height - 50, Math.max(8, offsetY - 38))}px`;
+          tt.classList.add('visible');
+        }
+      } else {
+        if (canvas._hoveredSector) {
+          canvas._hoveredSector = null;
+          renderChart();
+        }
+        if (tt) tt.classList.remove('visible');
+        if (leg) {
+          leg.querySelectorAll('.acc-table-row').forEach(row => row.classList.remove('hover-highlight'));
+        }
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      canvas._hoveredSector = null;
+      renderChart();
+      const tt = document.getElementById('wagon-tooltip');
+      if (tt) tt.classList.remove('visible');
+      const leg = document.getElementById('wagon-wheel-legend');
+      if (leg) {
+        leg.querySelectorAll('.acc-table-row').forEach(row => row.classList.remove('hover-highlight'));
+      }
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+      const dx = mx - cx;
+      const dy = my - cy;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist <= 26) {
+        if (teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector') {
+          setTeamGraphsStatFilter('sector', teamGraphsStatFilter.value, '');
+        }
+        return;
+      }
+      if (dist > R + 25) return;
+
+      const rad = Math.atan2(dx, -dy);
+      const deg = (rad * 180) / Math.PI;
+
+      let sec = 'straight';
+      let lbl = 'Straight Shots';
+      if (deg < -30 && deg > -150) {
+        sec = 'off';
+        lbl = 'Off Side';
+      } else if (deg > 30 && deg < 150) {
+        sec = 'leg';
+        lbl = 'Leg Side';
+      } else if (deg <= -150 || deg >= 150) {
+        sec = 'behind';
+        lbl = 'Behind Wicket';
+      }
+      setTeamGraphsStatFilter('sector', sec, `Wagon: ${lbl}`);
+    });
   }
-  if (defStat) {
-    defStat.textContent = `${defensiveCount} - ${((defensiveCount / totalIntent) * 100).toFixed(1)}%`;
-    const item = defStat.closest('.tgl-item');
-    if (item) {
-      item.style.cursor = 'pointer';
-      item.title = 'Click to filter visualizations to Defensive intent';
-      const isSel = teamGraphsStatFilter && teamGraphsStatFilter.category === 'intent' && teamGraphsStatFilter.value === 'Defensive';
-      item.style.background = isSel ? 'rgba(59, 130, 246, 0.28)' : '';
-      item.style.padding = '4px 8px';
-      item.style.borderRadius = '6px';
-      item.onclick = () => setTeamGraphsStatFilter('intent', 'Defensive', 'Defensive Intent');
-    }
+
+  // Populate Structured Breakdown Table in #wagon-wheel-legend
+  const legendEl = document.getElementById('wagon-wheel-legend');
+  if (legendEl) {
+    const totalWithDir = validShotsCount || 1;
+    const sectors = [
+      { key: 'off', label: 'Off Side', count: offSectorCount, color: '#38BDF8' },
+      { key: 'straight', label: 'Straight', count: straightSectorCount, color: '#FFAB00' },
+      { key: 'leg', label: 'Leg Side', count: legSectorCount, color: '#A855F7' },
+      { key: 'behind', label: 'Behind Wicket', count: behindSectorCount, color: '#64748B' }
+    ];
+
+    const isFiltered = teamGraphsStatFilter && teamGraphsStatFilter.category === 'sector';
+    const filterSec = isFiltered ? teamGraphsStatFilter.value : null;
+
+    const rowsHtml = sectors.map(s => {
+      const pct = ((s.count / totalWithDir) * 100).toFixed(1);
+      const isSelected = filterSec === s.key;
+      return `
+        <div class="acc-table-row ${isSelected ? 'active-filter' : ''}" 
+             data-sector="${s.key}"
+             onmouseenter="highlightWagonSector('${s.key}')" 
+             onmouseleave="unhighlightWagonSector()"
+             onclick="setTeamGraphsStatFilter('sector', '${s.key}', 'Wagon: ${s.label}')">
+          <div class="atr-left">
+            <span class="atr-dot" style="background: ${s.color};"></span>
+            <span>${s.label}</span>
+          </div>
+          <div class="atr-count">${s.count}</div>
+          <div class="atr-pct">${pct}%</div>
+        </div>
+      `;
+    }).join('');
+
+    // Intent sub-pills below rows
+    const totalInt = (aggressiveCount + defensiveCount) || 1;
+    const aggrPct = ((aggressiveCount / totalInt) * 100).toFixed(1);
+    const defPct = ((defensiveCount / totalInt) * 100).toFixed(1);
+    const isAggrSel = teamGraphsStatFilter && teamGraphsStatFilter.category === 'intent' && teamGraphsStatFilter.value === 'Aggressive';
+    const isDefSel = teamGraphsStatFilter && teamGraphsStatFilter.category === 'intent' && teamGraphsStatFilter.value === 'Defensive';
+
+    const intentPillsHtml = `
+      <div class="wagon-intent-pills">
+        <div class="wagon-intent-pill pill-aggr ${isAggrSel ? 'active' : ''}" 
+             onclick="setTeamGraphsStatFilter('intent', 'Aggressive', 'Aggressive Intent')"
+             title="Click to filter to Aggressive shots">
+          <span>⚡ Aggressive</span>
+          <span>${aggressiveCount} (${aggrPct}%)</span>
+        </div>
+        <div class="wagon-intent-pill pill-def ${isDefSel ? 'active' : ''}" 
+             onclick="setTeamGraphsStatFilter('intent', 'Defensive', 'Defensive Intent')"
+             title="Click to filter to Defensive shots">
+          <span>🛡️ Defensive</span>
+          <span>${defensiveCount} (${defPct}%)</span>
+        </div>
+      </div>
+    `;
+
+    legendEl.innerHTML = rowsHtml + intentPillsHtml;
   }
 }
 
