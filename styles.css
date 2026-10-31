@@ -5421,15 +5421,10 @@ body.dark-theme .sidebar-nav-item.active {
   align-items: center;
 }
 
-.topbar-session-switcher {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-full);
-  padding: 4px 12px;
-  box-shadow: var(--shadow-sm);
+.topbar-session-switcher,
+.btn-topbar-delete-spell,
+#topbar-delete-spell-btn {
+  display: none !important;
 }
 
 .switcher-dot {
