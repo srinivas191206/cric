@@ -8485,47 +8485,45 @@ body.dark-theme .multi-session-pill.active .pill-dot {
   transform: scale(1.02);
 }
 
-/* Maintain Sidebar & Application Shell Navigation in Team & Squads Hub */
-body.team-mode-active #dashboard-sidebar {
-  display: flex !important;
-}
-
-body.team-mode-active .dashboard-main-area {
-  margin-left: 260px !important;
-  width: calc(100% - 260px) !important;
-  min-width: 0 !important;
-}
-
-body.team-mode-active .topbar-dynamic-logo-link {
+/* STRICTLY NO LEFT SIDEBAR IN TEAM & SQUAD MANAGEMENT PORTAL */
+body.team-mode-active #dashboard-sidebar,
+body.roster-portal-active #dashboard-sidebar,
+body.view-player-roster #dashboard-sidebar,
+body:has(#view-teams-hub:not(.hidden)) #dashboard-sidebar,
+body:has(#view-player-roster:not(.hidden)) #dashboard-sidebar {
   display: none !important;
 }
 
-body.team-mode-active #topbar-sidebar-toggle-btn {
-  display: inline-flex !important;
+body.team-mode-active .dashboard-main-area,
+body.roster-portal-active .dashboard-main-area,
+body.view-player-roster .dashboard-main-area,
+body:has(#view-teams-hub:not(.hidden)) .dashboard-main-area,
+body:has(#view-player-roster:not(.hidden)) .dashboard-main-area {
+  margin-left: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+body.team-mode-active .topbar-dynamic-logo-link,
+body.roster-portal-active .topbar-dynamic-logo-link {
+  display: flex !important;
+}
+
+body.team-mode-active #topbar-sidebar-toggle-btn,
+body.roster-portal-active #topbar-sidebar-toggle-btn {
+  display: none !important;
 }
 
 body.team-mode-active .topbar-session-switcher {
   display: none !important;
 }
 
-body.team-mode-active .dashboard-content-viewport {
-  max-width: 1560px;
+body.team-mode-active .dashboard-content-viewport,
+body.roster-portal-active .dashboard-content-viewport {
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 24px 32px 60px;
+  padding: 20px 32px 60px;
   width: 100%;
-}
-
-@media (max-width: 900px) {
-  body.team-mode-active #dashboard-sidebar {
-    display: none !important;
-  }
-  body.team-mode-active #dashboard-sidebar.mobile-open {
-    display: flex !important;
-  }
-  body.team-mode-active .dashboard-main-area {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
 }
 
 .btn-back-to-team-hub {
@@ -8621,48 +8619,6 @@ body.view-player-roster .dashboard-content-viewport {
   width: 100% !important;
 }
 
-/* Maintain Sidebar & Application Shell Navigation in Team & Squads Hub */
-body.team-mode-active #dashboard-sidebar {
-  display: flex !important;
-}
-
-body.team-mode-active .dashboard-main-area {
-  margin-left: 260px !important;
-  width: calc(100% - 260px) !important;
-  min-width: 0 !important;
-}
-
-body.team-mode-active .topbar-dynamic-logo-link {
-  display: none !important;
-}
-
-body.team-mode-active #topbar-sidebar-toggle-btn {
-  display: inline-flex !important;
-}
-
-body.team-mode-active .topbar-session-switcher {
-  display: none !important;
-}
-
-body.team-mode-active .dashboard-content-viewport {
-  max-width: 1560px;
-  margin: 0 auto;
-  padding: 24px 32px 60px;
-  width: 100%;
-}
-
-@media (max-width: 900px) {
-  body.team-mode-active #dashboard-sidebar {
-    display: none !important;
-  }
-  body.team-mode-active #dashboard-sidebar.mobile-open {
-    display: flex !important;
-  }
-  body.team-mode-active .dashboard-main-area {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
-}
 
 /* 1. HERO BANNER: "YOUR TEAMS" & SUMMARY KPI METRICS */
 .teams-mgmt-hero {
