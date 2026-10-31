@@ -1,11 +1,11 @@
 {
   "id": "sess_1793190341_801e34",
-  "name": "Spell - Good Length Channel (Oct 28)",
-  "bowler_name": "k",
+  "name": "Morning Practice Spell",
+  "bowler_name": "ss",
   "bowling_type": "Right-arm Fast",
   "target_balls": 3,
   "has_wickets": true,
-  "created_at": "2026-10-28 12:25:41 UTC",
+  "created_at": "2026-10-27 09:20 AM",
   "updated_at": "2026-10-29 11:46:53 UTC",
   "deliveries": [
     {
@@ -288,5 +288,15 @@
     }
   ],
   "player_id": "player_ss",
-  "team_id": "team_trajecta_squad"
+  "team_id": "team_trajecta_squad",
+  "session_code": "#SS-003",
+  "session_type": "Net Practice",
+  "venue": "Main Ground",
+  "pitch_type": "Turf",
+  "recording_status": "Completed",
+  "video_status": "Video Available",
+  "video_duration": "15:42",
+  "notes": "Morning seam movement session on fresh track.",
+  "sample_thumbnail_url": "/static/images/session_thumbs/net_pitch_3.jpg",
+  "video_clips_count": 3
 }

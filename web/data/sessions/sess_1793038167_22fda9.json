@@ -1,10 +1,10 @@
 {
   "id": "sess_1793038167_22fda9",
-  "name": "sample",
-  "bowler_name": "sample",
+  "name": "Intra-Squad Match Spell",
+  "bowler_name": "ss",
   "bowling_type": "Right-arm Fast",
   "target_balls": 6,
-  "created_at": "2026-10-26 18:09:27 UTC",
+  "created_at": "2026-10-18 02:00 PM",
   "updated_at": "2026-10-26 18:09:27 UTC",
   "deliveries": [],
   "stats": {
@@ -20,5 +20,15 @@
     "consistency_score": 0.0
   },
   "player_id": "player_ss",
-  "team_id": "team_trajecta_squad"
+  "team_id": "team_trajecta_squad",
+  "session_code": "#SS-009",
+  "session_type": "Match",
+  "venue": "Stadium",
+  "pitch_type": "Turf",
+  "recording_status": "Incomplete",
+  "video_status": "Video Available",
+  "video_duration": "04:15",
+  "notes": "Middle overs spell interrupted by rain.",
+  "sample_thumbnail_url": "/static/images/session_thumbs/net_pitch_1.jpg",
+  "video_clips_count": 1
 }

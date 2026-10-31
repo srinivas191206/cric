@@ -1,10 +1,10 @@
 {
   "id": "sess_1793186402_7745da",
-  "name": "Test Calibration Spell",
-  "bowler_name": "Bowler",
+  "name": "New Ball Session",
+  "bowler_name": "ss",
   "bowling_type": "Right-arm Fast",
   "target_balls": 5,
-  "created_at": "2026-10-28 11:20:02 UTC",
+  "created_at": "2026-10-24 10:00 AM",
   "updated_at": "2026-10-28 11:28:11 UTC",
   "deliveries": [
     {
@@ -550,5 +550,15 @@
     "consistency_score": 50.0
   },
   "player_id": "player_ss",
-  "team_id": "team_trajecta_squad"
+  "team_id": "team_trajecta_squad",
+  "session_code": "#SS-006",
+  "session_type": "Net Practice",
+  "venue": "Main Ground",
+  "pitch_type": "Turf",
+  "recording_status": "Processing",
+  "video_status": "Processing",
+  "video_duration": "--:--",
+  "notes": "High-speed new ball delivery analysis.",
+  "sample_thumbnail_url": "",
+  "video_clips_count": 0
 }

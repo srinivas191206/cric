@@ -1,10 +1,10 @@
 {
   "id": "sess_1793112837_5d2bcc",
-  "name": "s",
-  "bowler_name": "sample2",
+  "name": "Match Simulation",
+  "bowler_name": "ss",
   "bowling_type": "Right-arm Fast",
   "target_balls": 3,
-  "created_at": "2026-10-27 14:53:57 UTC",
+  "created_at": "2026-10-22 06:00 PM",
   "updated_at": "2026-10-28 07:43:39 UTC",
   "deliveries": [
     {
@@ -3267,5 +3267,15 @@
     "consistency_score": 75.0
   },
   "player_id": "player_ss",
-  "team_id": "team_trajecta_squad"
+  "team_id": "team_trajecta_squad",
+  "session_code": "#SS-007",
+  "session_type": "Match",
+  "venue": "Stadium",
+  "pitch_type": "Turf",
+  "recording_status": "Completed",
+  "video_status": "Video Available",
+  "video_duration": "18:30",
+  "notes": "Full match simulation death overs bowling.",
+  "sample_thumbnail_url": "/static/images/session_thumbs/stadium_5.jpg",
+  "video_clips_count": 6
 }

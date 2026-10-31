@@ -541,14 +541,31 @@ function switchDashboardView(viewId) {
 
   // Handle Team Mode vs Solo Player Layout
   const isPlayerRosterView = (viewId === 'player-roster');
-  const isTeamPortalView = (viewId === 'teams-hub' || viewId === 'player-sessions' || viewId === 'team-analysis');
+  const isPlayerSessionsView = (viewId === 'player-sessions');
+  const isTeamPortalView = (viewId === 'teams-hub' || viewId === 'team-analysis');
   const backToTeamBtn = document.getElementById('btn-back-to-team-hub');
   const breadcrumbRoot = document.getElementById('breadcrumb-root-label');
   const breadcrumbCurrent = document.getElementById('topbar-breadcrumb-title');
 
-  if (isPlayerRosterView) {
+  if (isPlayerSessionsView) {
+    // STRICTLY NO LEFT SIDEBAR FOR SESSION LIBRARY & SELECTION CENTER
+    document.body.classList.remove('team-mode-active');
+    document.body.classList.remove('roster-portal-active');
+    document.body.classList.remove('view-player-roster');
+    document.body.classList.add('session-library-active');
+    document.body.classList.add('view-player-sessions');
+    if (backToTeamBtn) backToTeamBtn.classList.add('hidden');
+    if (breadcrumbRoot) {
+      breadcrumbRoot.innerHTML = `<a href="javascript:void(0)" onclick="switchDashboardView('player-roster')" style="color:#A4AAB8;text-decoration:none;">TEAMS & SQUADS</a> /`;
+    }
+    if (breadcrumbCurrent) {
+      breadcrumbCurrent.textContent = 'SELECT SESSIONS TO VIEW & ANALYZE';
+    }
+  } else if (isPlayerRosterView) {
     // STRICTLY NO LEFT SIDEBAR FOR TEAM DETAILS & PLAYER ROSTER
     document.body.classList.remove('team-mode-active');
+    document.body.classList.remove('session-library-active');
+    document.body.classList.remove('view-player-sessions');
     document.body.classList.add('roster-portal-active');
     document.body.classList.add('view-player-roster');
     if (backToTeamBtn) backToTeamBtn.classList.add('hidden');
@@ -561,6 +578,8 @@ function switchDashboardView(viewId) {
   } else if (isTeamPortalView) {
     document.body.classList.remove('roster-portal-active');
     document.body.classList.remove('view-player-roster');
+    document.body.classList.remove('session-library-active');
+    document.body.classList.remove('view-player-sessions');
     document.body.classList.add('team-mode-active');
     if (backToTeamBtn) backToTeamBtn.classList.add('hidden');
     if (breadcrumbRoot) breadcrumbRoot.textContent = 'TEAMS & SQUADS';
@@ -568,6 +587,8 @@ function switchDashboardView(viewId) {
     document.body.classList.remove('team-mode-active');
     document.body.classList.remove('roster-portal-active');
     document.body.classList.remove('view-player-roster');
+    document.body.classList.remove('session-library-active');
+    document.body.classList.remove('view-player-sessions');
     if (backToTeamBtn) {
       if (currentWorkspaceMode === 'team') {
         backToTeamBtn.classList.remove('hidden');
@@ -8759,26 +8780,42 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// ----------------------------------------------------------------------------
+// VIEW 3: SESSION LIBRARY & SELECTION CENTER (Full Redesign)
+// ----------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-// VIEW 3: PLAYER SESSIONS MULTI-SELECTOR (Screenshots 3 & 4)
-// ----------------------------------------------------------------------------
+let sessionFilterState = {
+  search: '',
+  dateRange: 'all',
+  customStart: '',
+  customEnd: '',
+  type: 'all',
+  recordingStatus: 'all',
+  videoStatus: 'all',
+  sort: 'newest',
+  category: 'all',
+  viewMode: 'grid'
+};
+
+let activeSessionContextMenu = null;
+
 async function openPlayerSessions(playerId) {
   currentActivePlayerId = playerId;
   const player = currentTeamPlayers.find(p => p.id === playerId);
   currentActivePlayerData = player;
   const team = currentActiveTeamData || (allTeamsList.find(t => t.id === currentActiveTeamId));
 
-  const teamBadgeEl = document.getElementById('pbb-team-title');
-  const playerNameEl = document.getElementById('pbb-player-name');
-  const playerAvatarEl = document.getElementById('pbb-player-avatar');
-  const playerMetaEl = document.getElementById('pbb-player-meta');
+  // Populate Header Card basics
+  const playerNameEl = document.getElementById('psh-player-name');
+  const playerAvatarEl = document.getElementById('psh-player-avatar');
+  const playerSquadEl = document.getElementById('psh-squad-badge');
+  const playerMetaEl = document.getElementById('psh-player-meta');
 
-  if (teamBadgeEl) teamBadgeEl.textContent = (team ? team.name : 'TRAJECTA SQUAD').toUpperCase();
-  if (playerNameEl) playerNameEl.textContent = player ? player.name : 'ss';
+  if (playerNameEl) playerNameEl.textContent = player ? player.name : 'SS';
   if (playerAvatarEl) playerAvatarEl.textContent = player ? (player.initials || 'SS') : 'SS';
+  if (playerSquadEl) playerSquadEl.textContent = (team ? team.name : 'TRAJECTA Squad');
   if (playerMetaEl && player) {
-    playerMetaEl.textContent = `${player.role || 'Fast Bowler'} · ${player.batting_style || 'Right'} · ${player.bowling_style || 'Right-arm Fast'}`;
+    playerMetaEl.textContent = `${player.role || 'Fast Bowler'} • ${player.batting_style || 'Right Hand Bat'} • ${player.bowling_style || 'Right-arm Fast'}`;
   }
 
   selectedPlayerSessionIds.clear();
@@ -8788,23 +8825,25 @@ async function openPlayerSessions(playerId) {
 
 async function fetchAndRenderPlayerSessions(playerId) {
   if (!playerId) playerId = currentActivePlayerId || 'player_ss';
+  currentActivePlayerId = playerId;
   const grid = document.getElementById('player-sessions-grid');
-  const refStatus = document.getElementById('sessions-refreshed-time');
-  if (refStatus) refStatus.textContent = 'Last refreshed just now';
 
-  // Ensure player data is populated
+  // Ensure player profile is fetched if not in memory
   if (!currentActivePlayerData || currentActivePlayerData.id !== playerId) {
     try {
       const pRes = await fetch(`/api/players/${playerId}`);
       if (pRes.ok) {
         currentActivePlayerData = await pRes.json();
         const p = currentActivePlayerData;
-        const playerNameEl = document.getElementById('pbb-player-name');
-        const playerAvatarEl = document.getElementById('pbb-player-avatar');
-        const playerMetaEl = document.getElementById('pbb-player-meta');
-        if (playerNameEl) playerNameEl.textContent = p.name;
-        if (playerAvatarEl) playerAvatarEl.textContent = p.initials || 'P';
-        if (playerMetaEl) playerMetaEl.textContent = `${p.role || 'All-rounder'} · ${p.batting_style || 'Right'} · ${p.bowling_style || 'Right Medium'}`;
+        const nameEl = document.getElementById('psh-player-name');
+        const avatarEl = document.getElementById('psh-player-avatar');
+        const squadEl = document.getElementById('psh-squad-badge');
+        const metaEl = document.getElementById('psh-player-meta');
+
+        if (nameEl) nameEl.textContent = p.name;
+        if (avatarEl) avatarEl.textContent = p.initials || 'P';
+        if (squadEl) squadEl.textContent = currentActiveTeamData ? currentActiveTeamData.name : 'TRAJECTA Squad';
+        if (metaEl) metaEl.textContent = `${p.role || 'Fast Bowler'} • ${p.batting_style || 'Right Hand Bat'} • ${p.bowling_style || 'Right-arm Fast'}`;
       }
     } catch (e) {}
   }
@@ -8814,65 +8853,317 @@ async function fetchAndRenderPlayerSessions(playerId) {
     if (!res.ok) throw new Error('Failed to load player sessions');
     currentPlayerSessionsList = await res.json();
 
-    // Default: select all sessions if any exist
-    selectedPlayerSessionIds.clear();
-    currentPlayerSessionsList.forEach(s => selectedPlayerSessionIds.add(s.id));
+    // Calculate Summary Metrics
+    const totalSessions = currentPlayerSessionsList.length;
+    let totalDelivs = 0;
+    let withVideoCount = 0;
+    let incompleteCount = 0;
+    let netPracticeCount = 0;
+    let matchCount = 0;
 
-    renderPlayerSessionsGrid(currentPlayerSessionsList);
-    updatePlayerSessionsActionBar();
+    currentPlayerSessionsList.forEach(s => {
+      totalDelivs += (s.deliveries_count || (s.deliveries ? s.deliveries.length : 0));
+      if (s.video_status === 'Video Available' || s.sample_video_url) {
+        withVideoCount++;
+      }
+      if (s.recording_status === 'Incomplete') {
+        incompleteCount++;
+      }
+      if (s.session_type === 'Net Practice') {
+        netPracticeCount++;
+      } else if (s.session_type === 'Match') {
+        matchCount++;
+      }
+    });
+
+    // Populate Compact Header KPI Cards
+    const totalBox = document.getElementById('psh-kpi-total-sessions');
+    const delivsBox = document.getElementById('psh-kpi-total-delivs');
+    const videoBox = document.getElementById('psh-kpi-with-video');
+    const incompleteBox = document.getElementById('psh-kpi-incomplete');
+
+    if (totalBox) totalBox.textContent = String(totalSessions).padStart(2, '0');
+    if (delivsBox) delivsBox.textContent = String(totalDelivs).padStart(2, '0');
+    if (videoBox) videoBox.textContent = String(withVideoCount).padStart(2, '0');
+    if (incompleteBox) incompleteBox.textContent = String(incompleteCount).padStart(2, '0');
+
+    // Populate Category Tab Counters
+    const cAll = document.getElementById('ps-count-all');
+    const cVideo = document.getElementById('ps-count-video');
+    const cIncomplete = document.getElementById('ps-count-incomplete');
+    const cNet = document.getElementById('ps-count-net');
+    const cMatch = document.getElementById('ps-count-match');
+
+    if (cAll) cAll.textContent = `(${totalSessions})`;
+    if (cVideo) cVideo.textContent = `(${withVideoCount})`;
+    if (cIncomplete) cIncomplete.textContent = `(${incompleteCount})`;
+    if (cNet) cNet.textContent = `(${netPracticeCount})`;
+    if (cMatch) cMatch.textContent = `(${matchCount})`;
+
+    // Default Selection matching reference: Select session 1 and 5 (or first 2 completed)
+    selectedPlayerSessionIds.clear();
+    if (currentPlayerSessionsList.length >= 5) {
+      selectedPlayerSessionIds.add(currentPlayerSessionsList[0].id);
+      selectedPlayerSessionIds.add(currentPlayerSessionsList[4].id);
+    } else if (currentPlayerSessionsList.length >= 2) {
+      selectedPlayerSessionIds.add(currentPlayerSessionsList[0].id);
+      selectedPlayerSessionIds.add(currentPlayerSessionsList[1].id);
+    } else if (currentPlayerSessionsList.length === 1) {
+      selectedPlayerSessionIds.add(currentPlayerSessionsList[0].id);
+    }
+
+    applySessionFiltersAndRender();
   } catch (err) {
     console.error("Error loading sessions for player:", err);
-    if (grid) grid.innerHTML = `<div class="p-6 text-muted">Unable to load sessions.</div>`;
+    if (grid) grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 32px; text-align: center; color: #A4AAB8;">Unable to load sessions. Please try refreshing.</div>`;
   }
+}
+
+function applySessionFiltersAndRender() {
+  if (!currentPlayerSessionsList) return;
+
+  let filtered = [...currentPlayerSessionsList];
+
+  // 1. Category Tab Filter
+  if (sessionFilterState.category === 'video') {
+    filtered = filtered.filter(s => s.video_status === 'Video Available' || s.sample_video_url);
+  } else if (sessionFilterState.category === 'incomplete') {
+    filtered = filtered.filter(s => s.recording_status === 'Incomplete');
+  } else if (sessionFilterState.category === 'Net Practice') {
+    filtered = filtered.filter(s => s.session_type === 'Net Practice');
+  } else if (sessionFilterState.category === 'Match') {
+    filtered = filtered.filter(s => s.session_type === 'Match');
+  }
+
+  // 2. Search Filter (by name, session code, notes, venue, activity)
+  if (sessionFilterState.search.trim()) {
+    const q = sessionFilterState.search.toLowerCase().trim();
+    filtered = filtered.filter(s => {
+      const name = (s.name || '').toLowerCase();
+      const code = (s.session_code || '').toLowerCase();
+      const venue = (s.venue || '').toLowerCase();
+      const notes = (s.notes || '').toLowerCase();
+      const act = (s.activity_note || '').toLowerCase();
+      const dt = (s.created_at || '').toLowerCase();
+      return name.includes(q) || code.includes(q) || venue.includes(q) || notes.includes(q) || act.includes(q) || dt.includes(q);
+    });
+  }
+
+  // 3. Date Range Filter
+  if (sessionFilterState.dateRange !== 'all') {
+    const now = new Date();
+    filtered = filtered.filter(s => {
+      if (!s.created_at) return true;
+      const sDate = new Date(s.created_at);
+      if (isNaN(sDate.getTime())) return true;
+
+      if (sessionFilterState.dateRange === 'today') {
+        return sDate.toDateString() === now.toDateString();
+      } else if (sessionFilterState.dateRange === '7days') {
+        const diffDays = (now - sDate) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+      } else if (sessionFilterState.dateRange === '30days') {
+        const diffDays = (now - sDate) / (1000 * 60 * 60 * 24);
+        return diffDays <= 30;
+      } else if (sessionFilterState.dateRange === '90days') {
+        const diffDays = (now - sDate) / (1000 * 60 * 60 * 24);
+        return diffDays <= 90;
+      } else if (sessionFilterState.dateRange === 'custom') {
+        if (!sessionFilterState.customStart && !sessionFilterState.customEnd) return true;
+        const start = sessionFilterState.customStart ? new Date(sessionFilterState.customStart) : new Date(0);
+        const end = sessionFilterState.customEnd ? new Date(sessionFilterState.customEnd + 'T23:59:59') : new Date(8640000000000000);
+        return sDate >= start && sDate <= end;
+      }
+      return true;
+    });
+  }
+
+  // 4. Session Type Filter
+  if (sessionFilterState.type !== 'all') {
+    filtered = filtered.filter(s => (s.session_type || 'Net Practice') === sessionFilterState.type);
+  }
+
+  // 5. Recording Status Filter
+  if (sessionFilterState.recordingStatus !== 'all') {
+    filtered = filtered.filter(s => (s.recording_status || 'Completed') === sessionFilterState.recordingStatus);
+  }
+
+  // 6. Video Status Filter
+  if (sessionFilterState.videoStatus !== 'all') {
+    if (sessionFilterState.videoStatus === 'available') {
+      filtered = filtered.filter(s => s.video_status === 'Video Available' || s.sample_video_url);
+    } else if (sessionFilterState.videoStatus === 'none') {
+      filtered = filtered.filter(s => s.video_status === 'No Video');
+    } else if (sessionFilterState.videoStatus === 'processing') {
+      filtered = filtered.filter(s => s.video_status === 'Processing');
+    } else if (sessionFilterState.videoStatus === 'error') {
+      filtered = filtered.filter(s => s.video_status === 'Video Unavailable');
+    }
+  }
+
+  // 7. Sort Filter
+  filtered.sort((a, b) => {
+    if (sessionFilterState.sort === 'newest') {
+      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
+    } else if (sessionFilterState.sort === 'oldest') {
+      return (new Date(a.created_at || 0)) - (new Date(b.created_at || 0));
+    } else if (sessionFilterState.sort === 'name-asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (sessionFilterState.sort === 'name-desc') {
+      return (b.name || '').localeCompare(a.name || '');
+    } else if (sessionFilterState.sort === 'delivs-desc') {
+      return (b.deliveries_count || 0) - (a.deliveries_count || 0);
+    } else if (sessionFilterState.sort === 'delivs-asc') {
+      return (a.deliveries_count || 0) - (b.deliveries_count || 0);
+    } else if (sessionFilterState.sort === 'recent') {
+      return (new Date(b.updated_at || b.created_at || 0)) - (new Date(a.updated_at || a.created_at || 0));
+    }
+    return 0;
+  });
+
+  // Render into selected view mode
+  if (sessionFilterState.viewMode === 'list') {
+    renderPlayerSessionsTable(filtered);
+  } else {
+    renderPlayerSessionsGrid(filtered);
+  }
+
+  updateSessionStickyBar();
 }
 
 function renderPlayerSessionsGrid(sessions) {
   const grid = document.getElementById('player-sessions-grid');
+  const tableWrap = document.getElementById('player-sessions-table-container');
+  if (grid) grid.classList.remove('hidden');
+  if (tableWrap) tableWrap.classList.add('hidden');
   if (!grid) return;
 
   if (!sessions || sessions.length === 0) {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 48px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-light);">
-        <p style="color: var(--text-muted); margin-bottom: 14px;">No bowling sessions recorded for this player yet.</p>
-        <button class="btn-th-create-team" onclick="recordNewSpellForCurrentPlayer()">+ Record First Spell</button>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px; background: #1E2027; border-radius: 16px; border: 1px dashed #343741;">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#A4AAB8" stroke-width="1.6" style="margin-bottom:12px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p style="color: #F4F5F8; font-size: 15px; font-weight: 700; margin: 0 0 6px;">No sessions match your search or filter criteria.</p>
+        <p style="color: #A4AAB8; font-size: 13px; margin: 0 0 16px;">Try adjusting your keywords, date range, or clear all filters.</p>
+        <button type="button" class="btn-ps-clear" style="margin:0 auto;" onclick="resetAllSessionFilters()">Clear All Filters</button>
       </div>
     `;
     return;
   }
 
-  const teamName = currentActiveTeamData ? currentActiveTeamData.name : 'Team Squad';
-
   grid.innerHTML = sessions.map(s => {
     const isSelected = selectedPlayerSessionIds.has(s.id);
-    const selectedClass = isSelected ? 'selected' : '';
-    const checkmarkContent = isSelected 
-      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` 
-      : '';
+    const videoStatus = s.video_status || 'No Video';
+    const recStatus = s.recording_status || 'Completed';
+    const thumbUrl = s.sample_thumbnail_url || '/static/images/session_thumbs/net_pitch_1.jpg';
+    const duration = s.video_duration || '10:00';
+    const delivs = s.deliveries_count || (s.deliveries ? s.deliveries.length : 0);
+    const clips = s.video_clips_count || 0;
+    const sessionCode = s.session_code || '#SS-001';
+    const venue = s.venue || 'SS Net';
+    const sessionType = s.session_type || 'Net Practice';
+    const dateFormatted = formatSessionDate(s.created_at);
 
-    // Thumbnail
-    let thumbHtml = `
-      <div class="session-thumb-placeholder">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-      </div>
-    `;
-    if (s.sample_video_url) {
-      thumbHtml = `<video class="session-thumb-video" src="${s.sample_video_url}" preload="metadata" muted playsinline></video>`;
+    // Build Video Preview Area
+    let videoPreviewHtml = '';
+    if (videoStatus === 'Video Available' || s.sample_video_url) {
+      videoPreviewHtml = `
+        <div class="sc-video-box">
+          <img src="${thumbUrl}" alt="${escapeHtml(s.name)}" class="sc-thumbnail-img" onerror="this.onerror=null;this.src='/static/images/coastal_warriors_tiger.jpg';" />
+          <button type="button" class="sc-play-btn" onclick="previewSessionVideo('${s.id}', event)" title="Play Session Video">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          </button>
+          <span class="sc-duration-badge">${duration}</span>
+        </div>
+      `;
+    } else if (videoStatus === 'Processing') {
+      videoPreviewHtml = `
+        <div class="sc-video-box">
+          <div class="sc-video-processing">
+            <div class="sc-spinner"></div>
+            <span>Processing Video...</span>
+          </div>
+          <span class="sc-duration-badge">--:--</span>
+        </div>
+      `;
+    } else if (recStatus === 'Incomplete' || videoStatus === 'Video Unavailable') {
+      videoPreviewHtml = `
+        <div class="sc-video-box">
+          <div class="sc-video-error">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Video Unavailable</span>
+          </div>
+        </div>
+      `;
+    } else {
+      videoPreviewHtml = `
+        <div class="sc-video-box">
+          <div class="sc-video-empty">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            <span>No Video Recording</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Status Badge
+    let statusBadgeClass = 'status-completed';
+    let statusBadgeText = 'Completed';
+    if (recStatus === 'Incomplete') {
+      statusBadgeClass = 'status-incomplete';
+      statusBadgeText = 'Incomplete';
+    } else if (videoStatus === 'Processing') {
+      statusBadgeClass = 'status-processing';
+      statusBadgeText = 'Processing';
+    } else if (videoStatus === 'No Video') {
+      statusBadgeClass = 'status-novideo';
+      statusBadgeText = 'No Video';
+    } else if (videoStatus === 'Video Unavailable') {
+      statusBadgeClass = 'status-error';
+      statusBadgeText = 'Video Unavailable';
     }
 
     return `
-      <div class="session-select-card ${selectedClass}" id="card-sess-${s.id}" onclick="toggleSessionSelection('${s.id}', event)">
-        <div class="session-thumb-wrap">
-          ${thumbHtml}
-          <div class="session-checkbox-pill">
-            ${checkmarkContent}
-          </div>
+      <div class="session-card ${isSelected ? 'selected' : ''}" id="sc-card-${s.id}" onclick="toggleSessionSelection('${s.id}', event)">
+        <!-- Top Right Checkbox with Amber Checkmark -->
+        <div class="sc-checkbox" onclick="toggleSessionSelection('${s.id}', event)" title="Select session">
+          ${isSelected ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
         </div>
-        <div class="session-card-info">
-          <h4 class="session-card-title">${escapeHtml(s.name)}</h4>
-          <span class="session-card-team-note">${escapeHtml(teamName)} · ${escapeHtml(s.activity_note || 'Bowling Spell')}</span>
-          <div class="session-card-meta-row">
-            <span>🗓 ${s.created_at ? s.created_at.split(' ')[0] : 'Recent'}</span>
-            <span class="session-card-delivs">⚡ ${s.deliveries_count || 0} deliveries</span>
+
+        <!-- Video Preview Box -->
+        ${videoPreviewHtml}
+
+        <!-- Information Area -->
+        <div class="sc-info-box">
+          <div class="sc-title-row">
+            <h3 class="sc-title">${escapeHtml(s.name)}</h3>
+            <button type="button" class="sc-btn-menu" onclick="toggleSessionContextMenu('${s.id}', event)" title="Session options">⋮</button>
+          </div>
+
+          <div class="sc-subtitle">
+            <span>${escapeHtml(sessionType)}</span>
+            <span>&bull;</span>
+            <span>${escapeHtml(venue)}</span>
+            <span>&bull;</span>
+            <span style="font-family:'JetBrains Mono',monospace; color:#A4AAB8;">${sessionCode}</span>
+          </div>
+
+          <div>
+            <span class="sc-status-badge ${statusBadgeClass}">${statusBadgeText}</span>
+          </div>
+
+          <div class="sc-meta-row">
+            <div class="sc-meta-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>${dateFormatted}</span>
+            </div>
+            <div class="sc-meta-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+              <span>${delivs} Delivs</span>
+            </div>
+            <div class="sc-meta-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <span>${clips} Clips</span>
+            </div>
           </div>
         </div>
       </div>
@@ -8880,80 +9171,738 @@ function renderPlayerSessionsGrid(sessions) {
   }).join('');
 }
 
+function renderPlayerSessionsTable(sessions) {
+  const grid = document.getElementById('player-sessions-grid');
+  const tableWrap = document.getElementById('player-sessions-table-container');
+  const tbody = document.getElementById('player-sessions-table-body');
+  if (grid) grid.classList.add('hidden');
+  if (tableWrap) tableWrap.classList.remove('hidden');
+  if (!tbody) return;
+
+  if (!sessions || sessions.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:32px; color:#A4AAB8;">No sessions found matching filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sessions.map(s => {
+    const isSelected = selectedPlayerSessionIds.has(s.id);
+    const delivs = s.deliveries_count || (s.deliveries ? s.deliveries.length : 0);
+    const clips = s.video_clips_count || 0;
+    const sessionCode = s.session_code || '#SS-001';
+    const dateFormatted = formatSessionDate(s.created_at);
+
+    return `
+      <tr class="${isSelected ? 'selected' : ''}" id="sc-row-${s.id}">
+        <td style="text-align: center;">
+          <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSessionSelection('${s.id}', event)" />
+        </td>
+        <td>
+          <div style="font-weight:700; color:#FFFFFF;">${escapeHtml(s.name)}</div>
+          <div style="font-size:11px; color:#8E95A5; font-family:'JetBrains Mono',monospace;">${sessionCode}</div>
+        </td>
+        <td>${escapeHtml(s.session_type || 'Net Practice')}</td>
+        <td>${dateFormatted}</td>
+        <td>${escapeHtml(s.venue || 'SS Net')}</td>
+        <td><strong>${delivs}</strong></td>
+        <td>${clips}</td>
+        <td><span class="sc-status-badge ${s.recording_status === 'Incomplete' ? 'status-incomplete' : 'status-completed'}">${s.recording_status || 'Completed'}</span></td>
+        <td><span class="sc-status-badge ${s.video_status === 'Video Available' ? 'status-completed' : (s.video_status === 'Processing' ? 'status-processing' : 'status-novideo')}">${s.video_status || 'No Video'}</span></td>
+        <td style="text-align: right;">
+          <button type="button" class="btn-ps-view-profile" style="padding:4px 10px; font-size:11px; margin-right:4px;" onclick="openSessionDetailsModal('${s.id}', event)">Details</button>
+          <button type="button" class="sc-btn-menu" onclick="toggleSessionContextMenu('${s.id}', event)">⋮</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function formatSessionDate(dtStr) {
+  if (!dtStr) return 'Recent';
+  try {
+    const d = new Date(dtStr);
+    if (isNaN(d.getTime())) return dtStr;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (e) {
+    return dtStr;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// SELECTION & STICKY ACTION BAR LOGIC
+// ----------------------------------------------------------------------------
 function toggleSessionSelection(sessionId, event) {
+  if (event) {
+    // If clicked on context menu or play button, don't toggle
+    if (event.target.closest('.sc-btn-menu') || event.target.closest('.sc-play-btn')) {
+      return;
+    }
+  }
+
   if (selectedPlayerSessionIds.has(sessionId)) {
     selectedPlayerSessionIds.delete(sessionId);
   } else {
     selectedPlayerSessionIds.add(sessionId);
   }
 
-  // Update card DOM
-  const card = document.getElementById(`card-sess-${sessionId}`);
+  // Update card DOM if present
+  const card = document.getElementById(`sc-card-${sessionId}`);
   if (card) {
-    const isSelected = selectedPlayerSessionIds.has(sessionId);
-    card.classList.toggle('selected', isSelected);
-    const checkPill = card.querySelector('.session-checkbox-pill');
-    if (checkPill) {
-      checkPill.innerHTML = isSelected 
-        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
-        : '';
+    const isSel = selectedPlayerSessionIds.has(sessionId);
+    card.classList.toggle('selected', isSel);
+    const cb = card.querySelector('.sc-checkbox');
+    if (cb) {
+      cb.innerHTML = isSel ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>` : '';
     }
   }
 
-  updatePlayerSessionsActionBar();
+  // Update table row if present
+  const row = document.getElementById(`sc-row-${sessionId}`);
+  if (row) {
+    const isSel = selectedPlayerSessionIds.has(sessionId);
+    row.classList.toggle('selected', isSel);
+    const cb = row.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = isSel;
+  }
+
+  updateSessionStickyBar();
 }
 
 function toggleSelectAllPlayerSessions() {
-  const allCount = currentPlayerSessionsList.length;
-  if (selectedPlayerSessionIds.size === allCount) {
-    selectedPlayerSessionIds.clear();
+  const allEligible = currentPlayerSessionsList || [];
+  if (selectedPlayerSessionIds.size === allEligible.length && allEligible.length > 0) {
+    deselectAllPlayerSessions();
   } else {
-    currentPlayerSessionsList.forEach(s => selectedPlayerSessionIds.add(s.id));
+    selectedPlayerSessionIds.clear();
+    allEligible.forEach(s => selectedPlayerSessionIds.add(s.id));
+    applySessionFiltersAndRender();
   }
-  renderPlayerSessionsGrid(currentPlayerSessionsList);
-  updatePlayerSessionsActionBar();
 }
 
-function updatePlayerSessionsActionBar() {
-  const total = currentPlayerSessionsList.length;
+function deselectAllPlayerSessions() {
+  selectedPlayerSessionIds.clear();
+  applySessionFiltersAndRender();
+}
+
+function updateSessionStickyBar() {
+  const bar = document.getElementById('ps-sticky-action-bar');
   const count = selectedPlayerSessionIds.size;
+  const total = currentPlayerSessionsList ? currentPlayerSessionsList.length : 0;
 
-  // Update banner counter (e.g. 2 SESSIONS · 2 SELECTED)
-  const counterEl = document.getElementById('pbb-selection-status');
-  if (counterEl) {
-    counterEl.textContent = `${total} SESSIONS · ${count} SELECTED`;
+  if (!bar) return;
+
+  if (count > 0) {
+    bar.classList.remove('hidden');
+
+    const label = document.getElementById('ps-sticky-count-text');
+    if (label) label.textContent = `${count} session${count === 1 ? '' : 's'} selected`;
+
+    const analyzeBtnLbl = document.getElementById('btn-ps-sticky-analyze-label');
+    if (analyzeBtnLbl) analyzeBtnLbl.textContent = `Analyze Selected Sessions (${count})`;
+
+    const selectAllCheck = document.getElementById('ps-sticky-select-all-check');
+    if (selectAllCheck) selectAllCheck.checked = (count === total && total > 0);
+
+    const selectAllLbl = document.getElementById('ps-sticky-select-all-label');
+    if (selectAllLbl) selectAllLbl.textContent = `Select All (${total})`;
+
+    const masterCheck = document.getElementById('ps-table-master-check');
+    if (masterCheck) masterCheck.checked = (count === total && total > 0);
+  } else {
+    bar.classList.add('hidden');
+    const masterCheck = document.getElementById('ps-table-master-check');
+    if (masterCheck) masterCheck.checked = false;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// FILTER & SEARCH EVENT HANDLERS
+// ----------------------------------------------------------------------------
+let sessionSearchDebounceTimer = null;
+function onSessionSearchInput(val) {
+  clearTimeout(sessionSearchDebounceTimer);
+  const clearBtn = document.getElementById('btn-ps-clear-search');
+  if (clearBtn) {
+    if (val.trim()) clearBtn.classList.remove('hidden');
+    else clearBtn.classList.add('hidden');
   }
 
-  // Update Analyze button
-  const btn = document.getElementById('btn-analyze-sessions');
-  const label = document.getElementById('btn-analyze-label');
+  sessionSearchDebounceTimer = setTimeout(() => {
+    sessionFilterState.search = val;
+    applySessionFiltersAndRender();
+  }, 200);
+}
 
-  if (label) {
-    label.textContent = count > 0 ? `Analyze (${count} ${count === 1 ? 'session' : 'sessions'})` : `Analyze (0 sessions)`;
-  }
+function clearSessionSearch() {
+  const input = document.getElementById('ps-search-input');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('btn-ps-clear-search');
+  if (clearBtn) clearBtn.classList.add('hidden');
+  sessionFilterState.search = '';
+  applySessionFiltersAndRender();
+}
 
-  if (btn) {
-    if (count > 0) {
-      btn.classList.remove('disabled');
-      btn.classList.add('active');
-      btn.removeAttribute('disabled');
+function onSessionFilterChange() {
+  const dateEl = document.getElementById('ps-filter-date');
+  const typeEl = document.getElementById('ps-filter-type');
+  const statusEl = document.getElementById('ps-filter-status');
+  const videoEl = document.getElementById('ps-filter-video');
+  const sortEl = document.getElementById('ps-filter-sort');
+  const customBar = document.getElementById('ps-custom-date-bar');
+
+  if (dateEl) {
+    sessionFilterState.dateRange = dateEl.value;
+    if (dateEl.value === 'custom') {
+      if (customBar) customBar.classList.remove('hidden');
+      const startEl = document.getElementById('ps-custom-date-start');
+      const endEl = document.getElementById('ps-custom-date-end');
+      sessionFilterState.customStart = startEl ? startEl.value : '';
+      sessionFilterState.customEnd = endEl ? endEl.value : '';
     } else {
-      btn.classList.add('disabled');
-      btn.classList.remove('active');
-      btn.setAttribute('disabled', 'true');
+      if (customBar) customBar.classList.add('hidden');
     }
   }
 
-  // Update Select All toggle text
-  const toggleBtn = document.getElementById('btn-toggle-select-all');
-  if (toggleBtn) {
-    toggleBtn.textContent = count === total && total > 0 ? 'Deselect All' : 'Select All';
+  if (typeEl) sessionFilterState.type = typeEl.value;
+  if (statusEl) sessionFilterState.recordingStatus = statusEl.value;
+  if (videoEl) sessionFilterState.videoStatus = videoEl.value;
+  if (sortEl) sessionFilterState.sort = sortEl.value;
+
+  applySessionFiltersAndRender();
+}
+
+function resetAllSessionFilters() {
+  sessionFilterState = {
+    search: '',
+    dateRange: 'all',
+    customStart: '',
+    customEnd: '',
+    type: 'all',
+    recordingStatus: 'all',
+    videoStatus: 'all',
+    sort: 'newest',
+    category: 'all',
+    viewMode: sessionFilterState.viewMode || 'grid'
+  };
+
+  const searchInput = document.getElementById('ps-search-input');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('btn-ps-clear-search');
+  if (clearBtn) clearBtn.classList.add('hidden');
+
+  const dateEl = document.getElementById('ps-filter-date');
+  if (dateEl) dateEl.value = 'all';
+
+  const customBar = document.getElementById('ps-custom-date-bar');
+  if (customBar) customBar.classList.add('hidden');
+
+  const typeEl = document.getElementById('ps-filter-type');
+  if (typeEl) typeEl.value = 'all';
+
+  const statusEl = document.getElementById('ps-filter-status');
+  if (statusEl) statusEl.value = 'all';
+
+  const videoEl = document.getElementById('ps-filter-video');
+  if (videoEl) videoEl.value = 'all';
+
+  const sortEl = document.getElementById('ps-filter-sort');
+  if (sortEl) sortEl.value = 'newest';
+
+  // Reset category tabs to all
+  document.querySelectorAll('.ps-cat-tab').forEach(t => t.classList.remove('active'));
+  const allTab = document.getElementById('ps-tab-all');
+  if (allTab) allTab.classList.add('active');
+
+  applySessionFiltersAndRender();
+}
+
+function setSessionCategory(cat) {
+  sessionFilterState.category = cat;
+  document.querySelectorAll('.ps-cat-tab').forEach(t => t.classList.remove('active'));
+
+  if (cat === 'all') {
+    document.getElementById('ps-tab-all')?.classList.add('active');
+  } else if (cat === 'video') {
+    document.getElementById('ps-tab-video')?.classList.add('active');
+  } else if (cat === 'incomplete') {
+    document.getElementById('ps-tab-incomplete')?.classList.add('active');
+  } else if (cat === 'Net Practice') {
+    document.getElementById('ps-tab-net')?.classList.add('active');
+  } else if (cat === 'Match') {
+    document.getElementById('ps-tab-match')?.classList.add('active');
+  }
+
+  applySessionFiltersAndRender();
+}
+
+function setSessionViewMode(mode) {
+  sessionFilterState.viewMode = mode;
+  const gridBtn = document.getElementById('ps-view-grid-btn');
+  const listBtn = document.getElementById('ps-view-list-btn');
+
+  if (mode === 'list') {
+    gridBtn?.classList.remove('active');
+    listBtn?.classList.add('active');
+  } else {
+    gridBtn?.classList.add('active');
+    listBtn?.classList.remove('active');
+  }
+
+  applySessionFiltersAndRender();
+}
+
+function toggleSortColumn(col) {
+  if (col === 'name') {
+    sessionFilterState.sort = sessionFilterState.sort === 'name-asc' ? 'name-desc' : 'name-asc';
+  } else if (col === 'date') {
+    sessionFilterState.sort = sessionFilterState.sort === 'newest' ? 'oldest' : 'newest';
+  } else if (col === 'deliveries') {
+    sessionFilterState.sort = sessionFilterState.sort === 'delivs-desc' ? 'delivs-asc' : 'delivs-desc';
+  }
+  const sortEl = document.getElementById('ps-filter-sort');
+  if (sortEl) sortEl.value = sessionFilterState.sort;
+  applySessionFiltersAndRender();
+}
+
+// ----------------------------------------------------------------------------
+// CONTEXTUAL 3-DOT MENU & MODAL ACTIONS
+// ----------------------------------------------------------------------------
+function toggleSessionContextMenu(sessionId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  closeActiveContextMenu();
+
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (!session) return;
+
+  const menu = document.createElement('div');
+  menu.className = 'sc-context-menu';
+  menu.id = `sc-context-menu-${sessionId}`;
+
+  menu.innerHTML = `
+    <button type="button" class="sc-context-item" onclick="openSessionDetailsModal('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>View Details</span>
+    </button>
+    ${session.sample_video_url ? `
+    <button type="button" class="sc-context-item" onclick="previewSessionVideo('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span>Preview Video</span>
+    </button>` : ''}
+    <button type="button" class="sc-context-item" onclick="openEditSessionModal('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span>Edit Session</span>
+    </button>
+    <button type="button" class="sc-context-item" onclick="copySessionId('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span>Copy Session ID</span>
+    </button>
+    ${session.sample_video_url ? `
+    <button type="button" class="sc-context-item" onclick="downloadSessionVideo('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download Video</span>
+    </button>` : ''}
+    <button type="button" class="sc-context-item item-danger" onclick="openDeleteSessionModal('${sessionId}', event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+      <span>Delete Session</span>
+    </button>
+  `;
+
+  // Attach to body with coordinates
+  document.body.appendChild(menu);
+  activeSessionContextMenu = menu;
+
+  const rect = event.target.getBoundingClientRect();
+  menu.style.position = 'fixed';
+  menu.style.top = `${rect.bottom + 6}px`;
+  menu.style.left = `${Math.min(window.innerWidth - 180, rect.left - 130)}px`;
+
+  // Global dismiss click handler
+  const dismissHandler = (e) => {
+    if (!menu.contains(e.target)) {
+      closeActiveContextMenu();
+      document.removeEventListener('click', dismissHandler);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', dismissHandler), 10);
+}
+
+function closeActiveContextMenu() {
+  if (activeSessionContextMenu) {
+    activeSessionContextMenu.remove();
+    activeSessionContextMenu = null;
   }
 }
 
+// Video Preview Modal
+function previewSessionVideo(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (!session) return;
+
+  const modal = document.getElementById('modal-session-video');
+  const title = document.getElementById('ps-video-modal-title');
+  const subtitle = document.getElementById('ps-video-modal-subtitle');
+  const player = document.getElementById('ps-main-video-player');
+  const emptyState = document.getElementById('ps-video-empty-state');
+  const clipsList = document.getElementById('ps-video-clips-list');
+  const footerInfo = document.getElementById('ps-video-footer-info');
+
+  if (title) title.textContent = session.name;
+  if (subtitle) subtitle.textContent = `${session.session_type || 'Net Practice'} • ${session.venue || 'SS Net'} • ${session.session_code || '#SS-001'}`;
+  if (footerInfo) footerInfo.textContent = `Recorded on ${session.created_at || 'Recent'} • Duration: ${session.video_duration || 'N/A'}`;
+
+  const videoUrl = session.sample_video_url;
+  if (videoUrl && player) {
+    player.src = videoUrl;
+    player.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+    player.play().catch(() => {});
+  } else {
+    if (player) {
+      player.pause();
+      player.classList.add('hidden');
+    }
+    if (emptyState) emptyState.classList.remove('hidden');
+  }
+
+  // Clips switcher if multiple clips
+  if (clipsList) {
+    const clipsCount = session.video_clips_count || 1;
+    if (clipsCount > 1 && videoUrl) {
+      clipsList.innerHTML = Array.from({ length: clipsCount }, (_, i) => `
+        <button type="button" class="ps-clip-chip ${i === 0 ? 'active' : ''}" onclick="switchSessionVideoClip('${videoUrl}', ${i + 1}, this)">
+          Clip ${i + 1}
+        </button>
+      `).join('');
+    } else {
+      clipsList.innerHTML = '';
+    }
+  }
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function switchSessionVideoClip(url, clipIndex, btn) {
+  document.querySelectorAll('.ps-clip-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const player = document.getElementById('ps-main-video-player');
+  if (player) {
+    player.src = url;
+    player.play().catch(() => {});
+  }
+}
+
+function closeSessionVideoModal() {
+  const modal = document.getElementById('modal-session-video');
+  const player = document.getElementById('ps-main-video-player');
+  if (player) {
+    player.pause();
+    player.src = '';
+  }
+  if (modal) modal.classList.add('hidden');
+}
+
+// Session Details Metadata Viewer
+function openSessionDetailsModal(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (!session) return;
+
+  const modal = document.getElementById('modal-session-details');
+  const title = document.getElementById('ps-details-title');
+  const code = document.getElementById('ps-details-code');
+  const grid = document.getElementById('ps-details-content');
+  const editBtn = document.getElementById('btn-ps-details-edit');
+
+  if (title) title.textContent = session.name;
+  if (code) code.textContent = `Session ID: ${session.session_code || session.id}`;
+  if (editBtn) editBtn.setAttribute('onclick', `openEditSessionModal('${sessionId}')`);
+
+  if (grid) {
+    grid.innerHTML = `
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Player Name</span>
+        <span class="ps-detail-value">${escapeHtml(currentActivePlayerData?.name || session.bowler_name || 'SS')}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Session Type</span>
+        <span class="ps-detail-value">${escapeHtml(session.session_type || 'Net Practice')}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Date & Time</span>
+        <span class="ps-detail-value">${escapeHtml(session.created_at || 'N/A')}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Venue</span>
+        <span class="ps-detail-value">${escapeHtml(session.venue || 'SS Net')}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Pitch Condition</span>
+        <span class="ps-detail-value">${escapeHtml(session.pitch_type || 'Turf')}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Deliveries Logged</span>
+        <span class="ps-detail-value">${session.deliveries_count || (session.deliveries ? session.deliveries.length : 0)} Balls</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Recording Status</span>
+        <span class="ps-detail-value" style="color:${session.recording_status === 'Incomplete' ? '#F00035' : '#00C58A'};">${session.recording_status || 'Completed'}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Video Status</span>
+        <span class="ps-detail-value" style="color:${session.video_status === 'Video Available' ? '#00C58A' : '#A4AAB8'};">${session.video_status || 'No Video'}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Video Clips & Duration</span>
+        <span class="ps-detail-value">${session.video_clips_count || 0} Clips • ${session.video_duration || 'N/A'}</span>
+      </div>
+      <div class="ps-detail-item">
+        <span class="ps-detail-label">Avg / Peak Speed</span>
+        <span class="ps-detail-value">${session.avg_speed_mph || '--'} mph / ${session.max_speed_mph || '--'} mph</span>
+      </div>
+      <div class="ps-detail-item item-full">
+        <span class="ps-detail-label">Coach Notes / Focus Points</span>
+        <span class="ps-detail-value" style="font-weight:400; line-height:1.5;">${escapeHtml(session.notes || session.activity_note || 'No notes entered for this session.')}</span>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeSessionDetailsModal() {
+  const modal = document.getElementById('modal-session-details');
+  if (modal) modal.classList.add('hidden');
+}
+
+function openEditSessionFromDetails() {
+  closeSessionDetailsModal();
+}
+
+// Edit Session Modal
+function openEditSessionModal(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+  closeSessionDetailsModal();
+
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (!session) return;
+
+  const modal = document.getElementById('modal-edit-session');
+  document.getElementById('edit-session-id').value = session.id;
+  document.getElementById('edit-session-name').value = session.name || '';
+  document.getElementById('edit-session-type').value = session.session_type || 'Net Practice';
+  document.getElementById('edit-session-status').value = session.recording_status || 'Completed';
+  document.getElementById('edit-session-venue').value = session.venue || '';
+  document.getElementById('edit-session-pitch').value = session.pitch_type || 'Turf';
+  document.getElementById('edit-session-datetime').value = session.created_at || '';
+  document.getElementById('edit-session-notes').value = session.notes || session.activity_note || '';
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeEditSessionModal() {
+  const modal = document.getElementById('modal-edit-session');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitEditSession(event) {
+  event.preventDefault();
+  const sessionId = document.getElementById('edit-session-id').value;
+  const updates = {
+    name: document.getElementById('edit-session-name').value.trim(),
+    session_type: document.getElementById('edit-session-type').value,
+    recording_status: document.getElementById('edit-session-status').value,
+    venue: document.getElementById('edit-session-venue').value.trim(),
+    pitch_type: document.getElementById('edit-session-pitch').value,
+    created_at: document.getElementById('edit-session-datetime').value.trim(),
+    notes: document.getElementById('edit-session-notes').value.trim()
+  };
+
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error('Failed to update session');
+
+    // Update local list
+    const session = currentPlayerSessionsList.find(s => s.id === sessionId);
+    if (session) {
+      Object.assign(session, updates);
+    }
+
+    closeEditSessionModal();
+    applySessionFiltersAndRender();
+    showRosterToast('success', 'Session Updated', 'Session metadata has been saved successfully.');
+  } catch (err) {
+    showRosterToast('error', 'Update Failed', err.message);
+  }
+}
+
+// Delete Session Modal
+function openDeleteSessionModal(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (!session) return;
+
+  const modal = document.getElementById('modal-delete-session');
+  document.getElementById('delete-session-id').value = sessionId;
+  const promptEl = document.getElementById('delete-session-prompt-msg');
+  const metaEl = document.getElementById('delete-session-meta-preview');
+
+  if (promptEl) promptEl.textContent = `Are you sure you want to permanently delete session "${session.name}"?`;
+  if (metaEl) metaEl.textContent = `Session Code: ${session.session_code || '#SS-001'} • ${session.deliveries_count || 0} balls logged will be removed.`;
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeleteSessionModal() {
+  const modal = document.getElementById('modal-delete-session');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitDeleteSession() {
+  const sessionId = document.getElementById('delete-session-id').value;
+  if (!sessionId) return;
+
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete session');
+
+    // Remove from in-memory lists
+    currentPlayerSessionsList = currentPlayerSessionsList.filter(s => s.id !== sessionId);
+    selectedPlayerSessionIds.delete(sessionId);
+
+    closeDeleteSessionModal();
+    await fetchAndRenderPlayerSessions(currentActivePlayerId);
+    showRosterToast('success', 'Session Deleted', 'Session has been permanently removed.');
+  } catch (err) {
+    showRosterToast('error', 'Delete Failed', err.message);
+  }
+}
+
+// Copy & Download Utilities
+function copySessionId(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  const text = session?.session_code || sessionId;
+  navigator.clipboard.writeText(text).then(() => {
+    showRosterToast('info', 'Copied to Clipboard', `Session identifier ${text} copied.`);
+  }).catch(() => {});
+}
+
+function downloadSessionVideo(sessionId, event) {
+  if (event) event.stopPropagation();
+  closeActiveContextMenu();
+  const session = currentPlayerSessionsList?.find(s => s.id === sessionId);
+  if (session?.sample_video_url) {
+    const a = document.createElement('a');
+    a.href = session.sample_video_url;
+    a.download = `${session.name.replace(/\s+/g, '_')}_video.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showRosterToast('success', 'Downloading Video', 'Starting download of video clip...');
+  }
+}
+
+// Record Spell Form Modal
+function recordNewSpellForCurrentPlayer() {
+  const modal = document.getElementById('modal-record-spell');
+  const nameInput = document.getElementById('record-spell-name');
+  const dateInput = document.getElementById('record-spell-date');
+  const venueInput = document.getElementById('record-spell-venue');
+
+  const playerName = currentActivePlayerData ? currentActivePlayerData.name : 'SS';
+  if (nameInput) nameInput.value = `Spell - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} Nets`;
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  if (venueInput) venueInput.value = 'SS Net';
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeRecordSpellModal() {
+  const modal = document.getElementById('modal-record-spell');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitRecordSpell(event) {
+  event.preventDefault();
+  const name = document.getElementById('record-spell-name').value.trim();
+  const sessionType = document.getElementById('record-spell-type').value;
+  const date = document.getElementById('record-spell-date').value;
+  const venue = document.getElementById('record-spell-venue').value.trim() || 'SS Net';
+  const pitchType = document.getElementById('record-spell-pitch').value;
+  const targetBalls = parseInt(document.getElementById('record-spell-target').value, 10) || 6;
+  const notes = document.getElementById('record-spell-notes').value.trim();
+
+  const payload = {
+    name: name,
+    bowler_name: currentActivePlayerData ? currentActivePlayerData.name : 'SS',
+    bowling_type: currentActivePlayerData ? (currentActivePlayerData.bowling_style || 'Right-arm Fast') : 'Right-arm Fast',
+    player_id: currentActivePlayerId || 'player_ss',
+    team_id: currentActiveTeamId || 'team_trajecta_squad',
+    target_balls: targetBalls,
+    session_type: sessionType,
+    venue: venue,
+    pitch_type: pitchType,
+    notes: notes,
+    created_at: `${date} 10:00 AM`
+  };
+
+  try {
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to create new session');
+    const newSession = await res.json();
+
+    closeRecordSpellModal();
+    await fetchAndRenderPlayerSessions(currentActivePlayerId);
+    showRosterToast('success', 'Spell Initialized', `Session "${newSession.name}" created.`);
+  } catch (err) {
+    showRosterToast('error', 'Creation Failed', err.message);
+  }
+}
+
+function openPlayerProfileFromSessions() {
+  switchDashboardView('player-roster');
+  if (currentActivePlayerId) {
+    setTimeout(() => {
+      const card = document.getElementById(`player-card-${currentActivePlayerId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('selected-admin-glow');
+      }
+    }, 150);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// DOWNSTREAM ANALYTICS LAUNCHER
+// ----------------------------------------------------------------------------
 async function analyzeSelectedPlayerSessions() {
   const sessionIds = Array.from(selectedPlayerSessionIds);
-  if (sessionIds.length === 0) return;
+  if (sessionIds.length === 0) {
+    showRosterToast('info', 'No Sessions Selected', 'Please select at least one session to analyze.');
+    return;
+  }
 
   // In Team mode, transition directly to the dedicated Team Deliveries Analysis View (Screenshot 2)
   if (currentWorkspaceMode === 'team' || document.body.classList.contains('team-mode-active')) {
@@ -9011,24 +9960,8 @@ async function analyzeSelectedPlayerSessions() {
     if (progressEl) progressEl.textContent = `${targetSession.deliveries ? targetSession.deliveries.length : 0} balls`;
 
   } catch (err) {
-    alert("Error launching multi-session analysis: " + err.message);
+    showRosterToast('error', 'Analysis Launch Error', err.message);
   }
-}
-
-function recordNewSpellForCurrentPlayer() {
-  if (currentActivePlayerData) {
-    const bowlerInput = document.getElementById('hero-bowler-name');
-    const styleInput = document.getElementById('hero-bowling-style');
-    const spellNameInput = document.getElementById('hero-session-name');
-    if (bowlerInput) bowlerInput.value = currentActivePlayerData.name;
-    if (styleInput && currentActivePlayerData.bowling_style) {
-      styleInput.value = currentActivePlayerData.bowling_style;
-    }
-    if (spellNameInput) {
-      spellNameInput.value = `${currentActivePlayerData.name} - Match Spell (${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
-    }
-  }
-  showNewSessionScreen();
 }
 
 // ============================================================================

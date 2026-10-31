@@ -1,11 +1,11 @@
 {
   "id": "sess_1793296664_c7201f",
-  "name": "Spell - Good Length Channel (Oct 29)",
+  "name": "Spell - Good Length Channel",
   "bowler_name": "ss",
   "bowling_type": "Right-arm Fast",
   "target_balls": 5,
   "has_wickets": true,
-  "created_at": "2026-10-29 17:57:44 UTC",
+  "created_at": "2026-10-29 10:30 AM",
   "updated_at": "2026-10-29 18:25:27 UTC",
   "deliveries": [
     {
@@ -737,5 +737,15 @@
     "consistency_score": 50.0
   },
   "player_id": "player_ss",
-  "team_id": "team_trajecta_squad"
+  "team_id": "team_trajecta_squad",
+  "session_code": "#SS-001",
+  "session_type": "Net Practice",
+  "venue": "SS Net",
+  "pitch_type": "Turf",
+  "recording_status": "Completed",
+  "video_status": "Video Available",
+  "video_duration": "12:34",
+  "notes": "Good length channel line discipline around 4th stump.",
+  "sample_thumbnail_url": "/static/images/session_thumbs/net_pitch_1.jpg",
+  "video_clips_count": 2
 }

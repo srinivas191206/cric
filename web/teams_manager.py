@@ -1060,16 +1060,26 @@ def get_player_sessions(player_id: str):
 
             sessions.append({
                 "id": data["id"],
-                "name": data["name"],
+                "name": data.get("name") or "Bowling Spell",
+                "session_code": data.get("session_code") or f"#{pname[:2].upper()}-{len(sessions)+1:03d}",
+                "session_type": data.get("session_type") or "Net Practice",
+                "venue": data.get("venue") or "SS Net",
+                "pitch_type": data.get("pitch_type") or "Turf",
+                "recording_status": data.get("recording_status") or "Completed",
+                "video_status": data.get("video_status") or ("Video Available" if sample_thumbnail else "No Video"),
+                "video_duration": data.get("video_duration") or ("12:34" if sample_thumbnail else "--:--"),
                 "player_id": player_id,
                 "team_id": data.get("team_id") or player.get("team_id"),
                 "bowler_name": data.get("bowler_name") or player["name"],
                 "deliveries_count": len(deliveries),
+                "video_clips_count": data.get("video_clips_count") if data.get("video_clips_count") is not None else len([d for d in deliveries if d.get("video_url")]),
                 "avg_speed_mph": avg_speed,
                 "max_speed_mph": max_speed,
                 "created_at": data.get("created_at", ""),
                 "activity_note": data.get("activity_note") or f"{player['name']} Net Practice",
-                "sample_video_url": sample_thumbnail
+                "sample_thumbnail_url": data.get("sample_thumbnail_url") or "",
+                "sample_video_url": sample_thumbnail,
+                "notes": data.get("notes") or ""
             })
 
     return sessions

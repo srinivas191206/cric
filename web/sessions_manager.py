@@ -218,6 +218,9 @@ def update_session(session_id: str, updates: dict) -> dict:
         session["has_wickets"] = bool(updates["has_wickets"])
     if "manual_wicket" in updates:
         session["manual_wicket"] = updates["manual_wicket"]
+    for field in ["session_type", "venue", "pitch_type", "notes", "created_at", "recording_status", "video_status", "video_duration", "session_code"]:
+        if field in updates and updates[field] is not None:
+            session[field] = str(updates[field]).strip()
     session["updated_at"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     with open(_get_session_path(session_id), "w", encoding="utf-8") as f:
         json.dump(session, f, indent=2)
