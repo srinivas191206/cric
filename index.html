@@ -611,63 +611,257 @@
           </div>
         </section>
 
-        <!-- ========================================================
-             FULLTRACK AI WORKFLOW VIEW 3: PLAYER SESSIONS MULTI-SELECTOR
+        <!-- =====================================        <!-- ========================================================
+             FULLTRACK AI WORKFLOW VIEW 3: SESSION LIBRARY & SELECTION CENTER
         ======================================================== -->
-        <section id="view-player-sessions" class="dashboard-view-panel hidden">
-          <!-- Back button -->
-          <div class="player-sessions-back-row">
-            <button type="button" class="btn-nav-back" onclick="switchDashboardView('player-roster')" title="Back to Players Roster">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <section id="view-player-sessions" class="dashboard-view-panel hidden session-library-panel">
+          
+          <!-- 1. COMPACT PLAYER INFORMATION HEADER CARD -->
+          <div class="ps-player-header-card">
+            <div class="psh-left-group">
+              <button type="button" class="btn-psh-back" onclick="switchDashboardView('player-roster')" title="Back to Players Roster">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+
+              <div class="psh-avatar-wrap">
+                <div class="psh-avatar-monogram" id="psh-player-avatar">SS</div>
+              </div>
+
+              <div class="psh-info-col">
+                <div class="psh-name-row">
+                  <h2 class="psh-player-name" id="psh-player-name">SS</h2>
+                  <span class="psh-squad-badge" id="psh-squad-badge">TRAJECTA Squad</span>
+                </div>
+                <div class="psh-style-meta" id="psh-player-meta">Fast Bowler &bull; Right Hand Bat &bull; Right-arm Fast</div>
+              </div>
+            </div>
+
+            <div class="psh-kpi-grid">
+              <div class="psh-kpi-card" id="psh-kpi-total-box">
+                <div class="psh-kpi-num" id="psh-kpi-total-sessions">09</div>
+                <div class="psh-kpi-lbl">Total Sessions</div>
+              </div>
+              <div class="psh-kpi-card" id="psh-kpi-delivs-box">
+                <div class="psh-kpi-num" id="psh-kpi-total-delivs">18</div>
+                <div class="psh-kpi-lbl">Total Deliveries</div>
+              </div>
+              <div class="psh-kpi-card" id="psh-kpi-video-box">
+                <div class="psh-kpi-num psh-kpi-video">
+                  <span id="psh-kpi-with-video">08</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="psh-kpi-icon-video"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                </div>
+                <div class="psh-kpi-lbl">With Video</div>
+              </div>
+              <div class="psh-kpi-card psh-kpi-incomplete-card" id="psh-kpi-incomplete-box">
+                <div class="psh-kpi-num psh-kpi-incomplete">
+                  <span id="psh-kpi-incomplete">01</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="psh-kpi-icon-incomplete"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="psh-kpi-lbl">Incomplete</div>
+              </div>
+
+              <button type="button" class="btn-psh-profile" onclick="openPlayerProfileFromSessions()" title="View Player Profile">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>View Player Profile</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. SESSION SEARCH & FILTER TOOLBAR -->
+          <div class="ps-toolbar">
+            <!-- Search Input -->
+            <div class="ps-search-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="ps-search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="ps-search-input" class="ps-search-input" placeholder="Search sessions by name, date, or notes..." oninput="onSessionSearchInput(this.value)" />
+              <button type="button" id="btn-ps-clear-search" class="ps-clear-search-btn hidden" onclick="clearSessionSearch()" title="Clear search">&times;</button>
+            </div>
+
+            <!-- Date Range Filter -->
+            <div class="ps-filter-control">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <div class="ps-filter-select-col">
+                <span class="ps-filter-label">Date Range</span>
+                <select id="ps-filter-date" class="ps-select-inline" onchange="onSessionFilterChange()">
+                  <option value="all" selected>All Time</option>
+                  <option value="today">Today</option>
+                  <option value="7days">Last 7 Days</option>
+                  <option value="30days">Last 30 Days</option>
+                  <option value="90days">Last 90 Days</option>
+                  <option value="custom">Custom Range...</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Session Type Filter -->
+            <div class="ps-filter-control">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+              <div class="ps-filter-select-col">
+                <span class="ps-filter-label">Session Type</span>
+                <select id="ps-filter-type" class="ps-select-inline" onchange="onSessionFilterChange()">
+                  <option value="all" selected>All Types</option>
+                  <option value="Net Practice">Net Practice</option>
+                  <option value="Practice">Practice</option>
+                  <option value="Match">Match</option>
+                  <option value="Training">Training</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Recording Status Filter -->
+            <div class="ps-filter-control">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <div class="ps-filter-select-col">
+                <span class="ps-filter-label">Recording Status</span>
+                <select id="ps-filter-status" class="ps-select-inline" onchange="onSessionFilterChange()">
+                  <option value="all" selected>All Status</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Incomplete">Incomplete</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Failed">Failed / Error</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Video Status Filter -->
+            <div class="ps-filter-control">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <div class="ps-filter-select-col">
+                <span class="ps-filter-label">Video Status</span>
+                <select id="ps-filter-video" class="ps-select-inline" onchange="onSessionFilterChange()">
+                  <option value="all" selected>All Videos</option>
+                  <option value="available">Video Available</option>
+                  <option value="none">No Video</option>
+                  <option value="processing">Processing</option>
+                  <option value="error">Video Unavailable</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Sort By -->
+            <div class="ps-filter-control">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>
+              <div class="ps-filter-select-col">
+                <span class="ps-filter-label">Sort By</span>
+                <select id="ps-filter-sort" class="ps-select-inline" onchange="onSessionFilterChange()">
+                  <option value="newest" selected>Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="name-asc">Session Name A–Z</option>
+                  <option value="name-desc">Session Name Z–A</option>
+                  <option value="delivs-desc">Most Deliveries</option>
+                  <option value="delivs-asc">Least Deliveries</option>
+                  <option value="recent">Recently Updated</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Clear Filters Button -->
+            <button type="button" class="btn-ps-clear" onclick="resetAllSessionFilters()" title="Reset all filters">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Clear Filters</span>
             </button>
           </div>
 
-          <!-- Fulltrack AI Top Banner Card -->
-          <div class="player-banner-blue-card">
-            <div class="pbb-left">
-              <span class="pbb-team-badge" id="pbb-team-title">TRAJECTA SQUAD</span>
-              <h1 class="pbb-player-title" id="pbb-player-name">ss</h1>
-              <div class="pbb-player-style" id="pbb-player-meta">Fast Bowler · Right · Right-arm Fast</div>
-              <span class="pbb-sessions-counter" id="pbb-selection-status">1 SESSION · 0 SELECTED</span>
+          <!-- Custom Date Range Picker Bar (Shown when Custom Range is selected) -->
+          <div id="ps-custom-date-bar" class="ps-custom-date-bar hidden">
+            <span>From:</span>
+            <input type="date" id="ps-custom-date-start" class="ps-date-input" onchange="onSessionFilterChange()" />
+            <span>To:</span>
+            <input type="date" id="ps-custom-date-end" class="ps-date-input" onchange="onSessionFilterChange()" />
+            <button type="button" class="btn-ps-date-apply" onclick="onSessionFilterChange()">Apply Range</button>
+          </div>
+
+          <!-- 3. CATEGORY TABS & VIEW SWITCHER ROW -->
+          <div class="ps-category-row">
+            <div class="ps-cat-tabs-wrap">
+              <button type="button" class="ps-cat-tab active" id="ps-tab-all" onclick="setSessionCategory('all')">
+                All Sessions <span class="ps-cat-badge" id="ps-count-all">(9)</span>
+              </button>
+              <button type="button" class="ps-cat-tab" id="ps-tab-video" onclick="setSessionCategory('video')">
+                With Video <span class="ps-cat-badge" id="ps-count-video">(8)</span>
+              </button>
+              <button type="button" class="ps-cat-tab" id="ps-tab-incomplete" onclick="setSessionCategory('incomplete')">
+                Incomplete <span class="ps-cat-badge" id="ps-count-incomplete">(1)</span>
+              </button>
+              <button type="button" class="ps-cat-tab" id="ps-tab-net" onclick="setSessionCategory('Net Practice')">
+                Net Practice <span class="ps-cat-badge" id="ps-count-net">(6)</span>
+              </button>
+              <button type="button" class="ps-cat-tab" id="ps-tab-match" onclick="setSessionCategory('Match')">
+                Match <span class="ps-cat-badge" id="ps-count-match">(2)</span>
+              </button>
             </div>
-            <div class="pbb-right">
-              <div class="pbb-initials-badge" id="pbb-player-avatar">SS</div>
+
+            <div class="ps-view-switcher">
+              <button type="button" class="ps-view-btn active" id="ps-view-grid-btn" onclick="setSessionViewMode('grid')" title="Grid View">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Grid View</span>
+              </button>
+              <button type="button" class="ps-view-btn" id="ps-view-list-btn" onclick="setSessionViewMode('list')" title="List View">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>List View</span>
+              </button>
             </div>
           </div>
 
-          <!-- Action Bar: Analyze Button + Refresh -->
-          <div class="player-sessions-action-row">
-            <div class="psa-left">
-              <button type="button" id="btn-analyze-sessions" class="btn-analyze-pill disabled" onclick="analyzeSelectedPlayerSessions()" disabled>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span id="btn-analyze-label">Analyze (0 sessions)</span>
+          <!-- 4. SESSION CARDS GRID (DEFAULT) -->
+          <div class="ps-sessions-grid" id="player-sessions-grid">
+            <!-- Dynamically populated 4-column cards -->
+          </div>
+
+          <!-- 5. SESSION TABLE LIST VIEW (ALTERNATIVE) -->
+          <div class="ps-sessions-table-wrap hidden" id="player-sessions-table-container">
+            <table class="ps-table">
+              <thead>
+                <tr>
+                  <th style="width: 44px; text-align: center;">
+                    <input type="checkbox" id="ps-table-master-check" onchange="toggleSelectAllPlayerSessions()" />
+                  </th>
+                  <th onclick="toggleSortColumn('name')" style="cursor:pointer;">Session Name & ID ⇅</th>
+                  <th>Session Type</th>
+                  <th onclick="toggleSortColumn('date')" style="cursor:pointer;">Date & Time ⇅</th>
+                  <th>Venue</th>
+                  <th onclick="toggleSortColumn('deliveries')" style="cursor:pointer;">Deliveries ⇅</th>
+                  <th>Video Clips</th>
+                  <th>Recording Status</th>
+                  <th>Video Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="player-sessions-table-body">
+                <!-- Dynamically populated table rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 6. STICKY SESSION SELECTION ACTION BAR (APPEARS ON SELECTION) -->
+          <div class="ps-sticky-action-bar hidden" id="ps-sticky-action-bar">
+            <div class="ps-sticky-left">
+              <label class="ps-sticky-checkbox-label">
+                <input type="checkbox" id="ps-sticky-select-all-check" checked onchange="toggleSelectAllPlayerSessions()" />
+                <span id="ps-sticky-select-all-label">Select All (9)</span>
+              </label>
+
+              <button type="button" class="btn-ps-sticky-deselect" onclick="deselectAllPlayerSessions()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Deselect All</span>
               </button>
-              <button type="button" class="btn-toggle-select-all" id="btn-toggle-select-all" onclick="toggleSelectAllPlayerSessions()">
-                Select All
-              </button>
+
+              <div class="ps-sticky-divider"></div>
+
+              <div class="ps-sticky-summary">
+                <span class="ps-sticky-count-text" id="ps-sticky-count-text">2 sessions selected</span>
+                <span class="ps-sticky-subtext">You can analyze multiple sessions together</span>
+              </div>
             </div>
-            <div class="psa-right">
-              <span class="th-refresh-status" id="sessions-refreshed-time">Last refreshed just now</span>
-              <button type="button" class="btn-th-refresh" onclick="fetchAndRenderPlayerSessions(currentActivePlayerId)" title="Refresh Sessions">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                <span>Refresh</span>
-              </button>
-              <button type="button" class="btn-th-create-team" onclick="recordNewSpellForCurrentPlayer()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>+ Record Spell</span>
+
+            <div class="ps-sticky-right">
+              <button type="button" id="btn-ps-sticky-analyze" class="btn-ps-sticky-analyze" onclick="analyzeSelectedPlayerSessions()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span id="btn-ps-sticky-analyze-label">Analyze Selected Sessions (2)</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
           </div>
 
-          <!-- Recent Sessions Title -->
-          <div class="recent-sessions-header">
-            <h3>Recent Sessions</h3>
-          </div>
-
-          <!-- Session Cards Grid with Circular Checkboxes -->
-          <div class="recent-sessions-grid" id="player-sessions-grid">
-            <!-- Dynamically populated session cards with top-right checkmarks -->
-          </div>
         </section>
 
         <!-- ========================================================
@@ -3890,6 +4084,219 @@
       <div class="cmc-footer">
         <button type="button" class="btn-primary" onclick="closeSwingForceModal()">Got it</button>
       </div>
+    </div>
+  <!-- ========================================================
+       MODAL: SESSION VIDEO PREVIEW
+  ======================================================== -->
+  <div id="modal-session-video" class="custom-modal-backdrop hidden" onclick="if(event.target===this) closeSessionVideoModal()">
+    <div class="custom-modal-card ps-video-modal-card">
+      <div class="custom-modal-header ps-video-modal-header">
+        <div>
+          <span class="custom-modal-badge" style="background:rgba(38,133,245,0.18); color:#2685F5; border-color:rgba(38,133,245,0.4);">VIDEO RECORDING PREVIEW</span>
+          <h3 class="custom-modal-title-wrap" id="ps-video-modal-title" style="margin:0; font-size:18px; color:#FFFFFF;">Session Video Preview</h3>
+          <p class="apw-subtitle" id="ps-video-modal-subtitle">Review delivery tracking video clips for this session.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeSessionVideoModal()" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="ps-video-modal-body">
+        <div class="ps-video-player-wrap">
+          <video id="ps-main-video-player" controls preload="auto" playsinline style="width:100%; max-height:480px; background:#000; border-radius:12px;"></video>
+          <div id="ps-video-empty-state" class="ps-video-empty-state hidden">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#A4AAB8" stroke-width="1.5"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7"/><path d="M23 7l-7 5 7 5V7z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            <p>No video recording available for this session.</p>
+          </div>
+        </div>
+        <!-- Clip switcher list if multiple clips -->
+        <div id="ps-video-clips-list" class="ps-video-clips-list"></div>
+      </div>
+      <div class="ps-modal-footer">
+        <div class="ps-modal-footer-info" id="ps-video-footer-info"></div>
+        <button type="button" class="btn-modal-cancel" onclick="closeSessionVideoModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: SESSION DETAILS METADATA
+  ======================================================== -->
+  <div id="modal-session-details" class="custom-modal-backdrop hidden" onclick="if(event.target===this) closeSessionDetailsModal()">
+    <div class="custom-modal-card ps-details-modal-card">
+      <div class="custom-modal-header">
+        <div>
+          <span class="custom-modal-badge" style="background:rgba(255,171,0,0.18); color:#FFAB00; border-color:rgba(255,171,0,0.4);">SESSION METADATA</span>
+          <h3 class="custom-modal-title-wrap" id="ps-details-title" style="margin:0; font-size:18px; color:#FFFFFF;">Session Details</h3>
+          <p class="apw-subtitle" id="ps-details-code">ID: #SS-001</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeSessionDetailsModal()" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="ps-details-grid" id="ps-details-content">
+        <!-- Dynamically populated key-value metadata items -->
+      </div>
+      <div class="ps-modal-footer">
+        <button type="button" class="btn-modal-cancel" onclick="closeSessionDetailsModal()">Close</button>
+        <button type="button" class="btn-modal-save" id="btn-ps-details-edit" onclick="openEditSessionFromDetails()">Edit Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: EDIT SESSION
+  ======================================================== -->
+  <div id="modal-edit-session" class="custom-modal-backdrop hidden" onclick="if(event.target===this) closeEditSessionModal()">
+    <div class="custom-modal-card apw-modal-card" style="max-width: 580px;">
+      <div class="custom-modal-header">
+        <div>
+          <span class="custom-modal-badge" style="background:rgba(255,171,0,0.18); color:#FFAB00; border-color:rgba(255,171,0,0.4);">SESSION MANAGEMENT</span>
+          <h3 class="custom-modal-title-wrap" style="margin:0; font-size:18px; color:#FFFFFF;">Edit Session Information</h3>
+          <p class="apw-subtitle">Update metadata, venue, pitch condition and notes.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeEditSessionModal()" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="form-edit-session" onsubmit="submitEditSession(event)">
+        <input type="hidden" id="edit-session-id" />
+        <div class="apw-form-grid" style="padding: 20px 24px;">
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">SESSION NAME <span style="color:#F00035;">*</span></label>
+            <input type="text" id="edit-session-name" class="apw-input" required />
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">SESSION TYPE</label>
+            <select id="edit-session-type" class="apw-select">
+              <option value="Net Practice">Net Practice</option>
+              <option value="Practice">Practice</option>
+              <option value="Match">Match</option>
+              <option value="Training">Training</option>
+            </select>
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">RECORDING STATUS</label>
+            <select id="edit-session-status" class="apw-select">
+              <option value="Completed">Completed</option>
+              <option value="Incomplete">Incomplete</option>
+              <option value="Processing">Processing</option>
+              <option value="Failed">Failed / Error</option>
+            </select>
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">TRAINING VENUE</label>
+            <input type="text" id="edit-session-venue" class="apw-input" placeholder="e.g. SS Net, Main Ground" />
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">PITCH TYPE</label>
+            <select id="edit-session-pitch" class="apw-select">
+              <option value="Turf">Turf</option>
+              <option value="Hard Pitch">Hard Pitch</option>
+              <option value="Matting">Matting</option>
+              <option value="Astro Turf">Astro Turf</option>
+            </select>
+          </div>
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">SESSION DATE & TIME</label>
+            <input type="text" id="edit-session-datetime" class="apw-input" placeholder="e.g. 2026-10-29 10:30 AM" />
+          </div>
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">SESSION NOTES / COACH OBSERVATIONS</label>
+            <textarea id="edit-session-notes" class="apw-input" rows="3" placeholder="Enter session notes or coaching focus points..."></textarea>
+          </div>
+        </div>
+        <div class="apw-footer">
+          <button type="button" class="btn-modal-cancel" onclick="closeEditSessionModal()">Cancel</button>
+          <button type="submit" class="btn-modal-save">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: DELETE SESSION CONFIRMATION
+  ======================================================== -->
+  <div id="modal-delete-session" class="custom-modal-backdrop hidden" onclick="if(event.target===this) closeDeleteSessionModal()">
+    <div class="custom-modal-card apw-modal-card" style="max-width: 480px;">
+      <div class="custom-modal-header">
+        <div>
+          <span class="custom-modal-badge" style="background:rgba(240,0,53,0.18); color:#F00035; border-color:rgba(240,0,53,0.4);">DANGER ZONE</span>
+          <h3 class="custom-modal-title-wrap" style="margin:0; font-size:18px; color:#FFFFFF;">Delete Session</h3>
+          <p class="apw-subtitle">This action will remove the session from the player's history.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeDeleteSessionModal()" aria-label="Close dialog">&times;</button>
+      </div>
+      <div style="padding: 20px 24px;">
+        <div style="background: rgba(240,0,53,0.08); border: 1px solid rgba(240,0,53,0.25); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <p style="margin:0; font-size: 0.9rem; color: #F4F5F8;" id="delete-session-prompt-msg">
+            Are you sure you want to permanently delete this session?
+          </p>
+          <div style="margin-top: 10px; font-size: 0.8rem; color: #A4AAB8;" id="delete-session-meta-preview">
+            Deliveries and associated tracking records will be removed.
+          </div>
+        </div>
+        <input type="hidden" id="delete-session-id" />
+      </div>
+      <div class="apw-footer">
+        <button type="button" class="btn-modal-cancel" onclick="closeDeleteSessionModal()">Cancel</button>
+        <button type="button" class="btn-modal-danger" style="background:#F00035; color:#FFF; border:none; padding:10px 20px; border-radius:9999px; font-weight:700; cursor:pointer;" onclick="submitDeleteSession()">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: RECORD NEW SPELL / SESSION
+  ======================================================== -->
+  <div id="modal-record-spell" class="custom-modal-backdrop hidden" onclick="if(event.target===this) closeRecordSpellModal()">
+    <div class="custom-modal-card apw-modal-card" style="max-width: 600px;">
+      <div class="custom-modal-header">
+        <div>
+          <span class="custom-modal-badge" style="background:rgba(0,197,138,0.18); color:#00C58A; border-color:rgba(0,197,138,0.4);">RECORD SPELL WORKFLOW</span>
+          <h3 class="custom-modal-title-wrap" style="margin:0; font-size:18px; color:#FFFFFF;">Record New Spell Session</h3>
+          <p class="apw-subtitle">Initialize a new bowling session with automated AI trajectory tracking.</p>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeRecordSpellModal()" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="form-record-spell" onsubmit="submitRecordSpell(event)">
+        <div class="apw-form-grid" style="padding: 20px 24px;">
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">SPELL / SESSION NAME <span style="color:#F00035;">*</span></label>
+            <input type="text" id="record-spell-name" class="apw-input" placeholder="e.g. Spell - Outswing Channel" required />
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">SESSION TYPE <span style="color:#F00035;">*</span></label>
+            <select id="record-spell-type" class="apw-select">
+              <option value="Net Practice" selected>Net Practice</option>
+              <option value="Practice">Practice</option>
+              <option value="Match">Match</option>
+              <option value="Training">Training</option>
+            </select>
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">SESSION DATE <span style="color:#F00035;">*</span></label>
+            <input type="date" id="record-spell-date" class="apw-input" required />
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">TRAINING VENUE</label>
+            <input type="text" id="record-spell-venue" class="apw-input" placeholder="e.g. SS Net, Main Ground" />
+          </div>
+          <div class="apw-field">
+            <label class="apw-label">PITCH TYPE</label>
+            <select id="record-spell-pitch" class="apw-select">
+              <option value="Turf" selected>Turf</option>
+              <option value="Hard Pitch">Hard Pitch</option>
+              <option value="Matting">Matting</option>
+              <option value="Astro Turf">Astro Turf</option>
+            </select>
+          </div>
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">TARGET DELIVERIES</label>
+            <input type="number" id="record-spell-target" class="apw-input" value="6" min="1" max="60" />
+          </div>
+          <div class="apw-field apw-col-full">
+            <label class="apw-label">COACH NOTES / OBJECTIVES</label>
+            <textarea id="record-spell-notes" class="apw-input" rows="2" placeholder="e.g. Test release point consistency and seam angles..."></textarea>
+          </div>
+        </div>
+        <div class="apw-footer">
+          <button type="button" class="btn-modal-cancel" onclick="closeRecordSpellModal()">Cancel</button>
+          <button type="submit" class="btn-modal-save" style="background:#00C58A;">Start Recording</button>
+        </div>
+      </form>
     </div>
   </div>
 
